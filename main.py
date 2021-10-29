@@ -6,6 +6,7 @@ from environments import *
 from agent import *
 from train import *
 from visualizations import *
+from graphsearch import *
 
 from tf_agents.environments import gym_wrapper
 from tf_agents.environments import tf_py_environment
@@ -74,16 +75,22 @@ agent = UvfAgent(
 
 
 start = time.time()
-# train_eval(
-# 		agent,
-# 		tf_env,
-# 		eval_tf_env,
-# 		initial_collect_steps=1000,
-# 		eval_interval=1000,
-# 		num_eval_episodes=10,
-# 		num_iterations=30000,
-# )
+train_eval(
+		agent,
+		tf_env,
+		eval_tf_env,
+		initial_collect_steps=1000,
+		eval_interval=1000,
+		num_eval_episodes=10,
+		num_iterations=30000,
+)
 print(f'Training took {round((time.time()-start)/60, 2)} minutes')
 
-visualize_rollouts(eval_tf_env, agent)
+# Initialize search policy
+replay_buffer_size = 1000
+rb_vec = fill_replay_buffer(eval_tf_env, replay_buffer_size=replay_buffer_size)
+agent.initialize_search(rb_vec, max_search_steps=7)
+search_policy = SearchPolicy(agent, rb_vec, open_loop=True)
 
+# visualize_naive_rollouts(eval_tf_env, agent)
+visualize_rollouts(eval_tf_env, agent, search_policy, rb_vec)

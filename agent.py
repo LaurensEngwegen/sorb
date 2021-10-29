@@ -1,11 +1,14 @@
 from actorcritic import *
 
+import numpy as np
+import scipy.sparse.csgraph
 
 from tf_agents.agents import tf_agent
 from tf_agents.utils import common
 from tf_agents.policies import actor_policy
 from tf_agents.policies import ou_noise_policy
 from tf_agents.trajectories import trajectory
+from tf_agents.trajectories import time_step
 from tf_agents.utils import common
 
 #@title Implement the goal-conditioned agent.
@@ -111,13 +114,11 @@ class UvfAgent(tf_agent.TFAgent):
 				collect_policy,
 				train_sequence_length=2)
 
-	def initialize_search(self, active_set, max_search_steps=3,
-												combine_ensemble_method='min'):
+	def initialize_search(self, active_set, max_search_steps=3, combine_ensemble_method='min'):
 		self._combine_ensemble_method = combine_ensemble_method
 		self._max_search_steps = max_search_steps
 		self._active_set_tensor = tf.convert_to_tensor(value=active_set)
-		pdist = self._get_pairwise_dist(self._active_set_tensor, masked=True,
-																		aggregate=combine_ensemble_method)		
+		pdist = self._get_pairwise_dist(self._active_set_tensor, masked=True, aggregate=combine_ensemble_method)		
 		distances = scipy.sparse.csgraph.floyd_warshall(pdist, directed=True)
 		self._distances_tensor = tf.convert_to_tensor(value=distances, dtype=tf.float32)
 

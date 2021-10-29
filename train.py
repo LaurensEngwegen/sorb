@@ -28,6 +28,7 @@ def train_eval(
 		log_interval=1000,
 		random_seed=0):
 	"""A simple train and eval for UVF. """
+	tf.compat.v1.logging.set_verbosity('INFO')
 	tf.compat.v1.logging.info('random_seed = %d' % random_seed)
 	np.random.seed(random_seed)
 	random.seed(random_seed)
