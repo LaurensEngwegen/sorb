@@ -3,6 +3,8 @@ import numpy as np
 import networkx as nx
 
 from tf_agents.environments import wrappers
+from tf_agents.environments import gym_wrapper
+from tf_agents.environments import tf_py_environment
 
 #@title Implement the 2D navigation environment and helper functions.
 WALLS = {
@@ -519,3 +521,43 @@ class NonTerminatingTimeLimit(wrappers.PyEnvironmentBaseWrapper):
 
 		return ts
 
+
+
+def env_load_fn(environment_name,
+				 max_episode_steps=None,
+				 resize_factor=1,
+				 gym_env_wrappers=(GoalConditionedPointWrapper,),
+				 terminate_on_timeout=False):
+	"""Loads the selected environment and wraps it with the specified wrappers.
+
+	Args:
+		environment_name: Name for the environment to load.
+		max_episode_steps: If None the max_episode_steps will be set to the default
+			step limit defined in the environment's spec. No limit is applied if set
+			to 0 or if there is no timestep_limit set in the environment's spec.
+		gym_env_wrappers: Iterable with references to wrapper classes to use
+			directly on the gym environment.
+		terminate_on_timeout: Whether to set done = True when the max episode
+			steps is reached.
+
+	Returns:
+		A PyEnvironmentBase instance.
+	"""
+	gym_env = PointEnv(walls=environment_name,
+										 resize_factor=resize_factor)
+		
+	for wrapper in gym_env_wrappers:
+		gym_env = wrapper(gym_env)
+	env = gym_wrapper.GymWrapper(
+			gym_env,
+			discount=1.0,
+			auto_reset=True,
+	)
+
+	if max_episode_steps > 0:
+		if terminate_on_timeout:
+			env = wrappers.TimeLimit(env, max_episode_steps)
+		else:
+			env = NonTerminatingTimeLimit(env, max_episode_steps)
+
+	return tf_py_environment.TFPyEnvironment(env)

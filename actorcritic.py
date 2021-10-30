@@ -4,19 +4,7 @@ import tensorflow_probability as tfp
 
 from tf_agents.agents.ddpg import actor_network
 from tf_agents.agents.ddpg import critic_network
-# from tf_agents.drivers import dynamic_step_driver
-# from tf_agents.eval import metric_utils
-# from tf_agents.metrics import tf_metrics
 from tf_agents.networks import utils
-# from tf_agents.policies import actor_policy
-# from tf_agents.policies import ou_noise_policy
-# from tf_agents.policies import tf_policy
-# from tf_agents.replay_buffers import tf_uniform_replay_buffer
-# from tf_agents.trajectories import time_step
-# from tf_agents.trajectories import trajectory
-# from tf_agents.utils import common
-
-#@title Implement the goal-conditioned actor and critic.
 
 def set_goal(traj, goal):
 	"""Sets the goal of a Trajectory or TimeStep."""

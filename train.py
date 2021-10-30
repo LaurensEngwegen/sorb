@@ -1,11 +1,9 @@
 import random
-import tqdm
+from tqdm import tqdm
 import time
 
 import numpy as np
-
 import tensorflow as tf
-
 from tf_agents.drivers import dynamic_step_driver
 from tf_agents.replay_buffers import tf_uniform_replay_buffer
 from tf_agents.eval import metric_utils
@@ -28,7 +26,7 @@ def train_eval(
 		log_interval=1000,
 		random_seed=0):
 	"""A simple train and eval for UVF. """
-	tf.compat.v1.logging.set_verbosity('INFO')
+	# tf.compat.v1.logging.set_verbosity('INFO')
 	tf.compat.v1.logging.info('random_seed = %d' % random_seed)
 	np.random.seed(random_seed)
 	random.seed(random_seed)
@@ -77,7 +75,7 @@ def train_eval(
 			num_steps=2).prefetch(3)
 	iterator = iter(dataset)
 		
-	for _ in tqdm.tnrange(num_iterations):
+	for _ in tqdm(range(num_iterations)):
 		start_time = time.time()
 		time_step, policy_state = collect_driver.run(
 				time_step=time_step,
