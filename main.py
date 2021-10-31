@@ -45,8 +45,11 @@ agent.initialize_search(rb_vec, max_search_steps=7)
 search_policy = SearchPolicy(agent, rb_vec, open_loop=True)
 
 # visualize_naive_rollouts(eval_tf_env, agent)
+distance = 10
 stop = ''
 while stop != 'q':
-	visualize_rollouts(eval_tf_env, agent, search_policy, rb_vec)
-	stop = input('Input q to quit, anything else for another rollout ')
+	if stop == 'c':
+		distance = int(input('New distance: '))
+	visualize_rollouts(eval_tf_env, agent, search_policy, rb_vec, distance)
+	stop = input('Input q to quit, c to change distance, anything else for another rollout: ')
 

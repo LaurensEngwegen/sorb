@@ -59,17 +59,22 @@ def visualize_naive_rollouts(eval_tf_env, agent):
 			plt.legend(loc='lower left', bbox_to_anchor=(0.3, 1), ncol=3, fontsize=16)
 	plt.show()
 
-def visualize_rollouts(eval_tf_env, agent, search_policy, rb_vec):
+def visualize_rollouts(eval_tf_env, agent, search_policy, rb_vec, distance=None):
 	eval_tf_env.pyenv.envs[0]._duration = 300
 	seed = np.random.randint(0, 1000000)
 
-	difficulty = 0.7
-	max_goal_dist = eval_tf_env.pyenv.envs[0].gym.max_goal_dist
-	eval_tf_env.pyenv.envs[0].gym.set_sample_goal_args(
-		prob_constraint=1.0,
-		min_dist=max(0, max_goal_dist * (difficulty - 0.05)),
-		max_dist=max_goal_dist * (difficulty + 0.05))
-
+	if distance is None:
+		difficulty = 0.7
+		max_goal_dist = eval_tf_env.pyenv.envs[0].gym.max_goal_dist
+		eval_tf_env.pyenv.envs[0].gym.set_sample_goal_args(
+			prob_constraint=1.0,
+			min_dist=max(0, max_goal_dist * (difficulty - 0.05)),
+			max_dist=max_goal_dist * (difficulty + 0.05))
+	else:
+		eval_tf_env.pyenv.envs[0].gym.set_sample_goal_args(
+			prob_constraint=1.0,
+			min_dist=distance,
+			max_dist=distance)
 
 	plt.figure(figsize=(12, 5))
 	for col_index in range(2):
