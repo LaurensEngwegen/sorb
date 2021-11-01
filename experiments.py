@@ -11,45 +11,48 @@ from graphsearch import *
 from tqdm import tqdm
 import numpy as np
 
-def distance_exp(eval_tf_env, agent, search_policy, goal_distance, max_duration, n_experiments=100):
-    print(f'Starting {n_experiments} experiments, with max. {max_duration} timesteps and distance to goal = {goal_distance}')
+def distance_exp(eval_tf_env, agent, search_policy, goal_distance, max_duration):
     seed = np.random.randint(0, 1000000)
-    np.random.seed(seed)
+    
     eval_tf_env.pyenv.envs[0]._duration = max_duration
     eval_tf_env.pyenv.envs[0].gym.set_sample_goal_args(
         prob_constraint=1.0,
-        min_dist=goal_distance,
-        max_dist=goal_distance)
+        min_dist=goal_distance-1,
+        max_dist=goal_distance+1)
 
     search = [1, 0]
-    success_rate = [0.0, 0.0]
-    success_stepcount = [[], []]
-    for _ in tqdm(range(n_experiments)):
-        for use_search in search:
-            ts = eval_tf_env.reset()
-            step_counter = 0
-            for _ in range(eval_tf_env.pyenv.envs[0]._duration):
-                if ts.is_last():
-                    break
-                if use_search:
-                    action = search_policy.action(ts)
-                else:
-                    action = agent.policy.action(ts)
-                ts = eval_tf_env.step(action)
-                step_counter += 1
-            if step_counter < eval_tf_env.pyenv.envs[0]._duration:
-                success_rate[use_search] = success_rate[use_search] + 1.0
-                success_stepcount[use_search].append(step_counter)
+    steps = [0, 0]
+    for use_search in search:
+        np.random.seed(seed)
+        ts = eval_tf_env.reset()
+        step_counter = 0
+        for _ in range(eval_tf_env.pyenv.envs[0]._duration):
+            if ts.is_last():
+                break
+            if use_search:
+                action = search_policy.action(ts)
+            else:
+                action = agent.policy.action(ts)
+            ts = eval_tf_env.step(action)
+            step_counter += 1
+        if step_counter < eval_tf_env.pyenv.envs[0]._duration:
+            steps[use_search] = step_counter
 
-    suc0 = success_rate[0]/n_experiments
-    suc1 = success_rate[1]/n_experiments
-    print(f'\nSEARCH - Success rate: {suc1}')
-    print(f'NO SEARCH - Success rate: {suc0}')
-    if len(success_stepcount[1]) > 0:
-        print(f'\nSEARCH - Average number of steps to reach goal: {sum(success_stepcount[1])/len(success_stepcount[1])}')
-    if len(success_stepcount[0]) > 0:
-        print(f'NO SEARCH - Average number of steps to reach goal: {sum(success_stepcount[0])/len(success_stepcount[0])}\n')
+    return steps
 
+def print_success(search_steps, nosearch_steps, n_experiments):
+    print(f'\nSEARCH')
+    if len(search_steps) > 0:
+        print(f'\tSuccess rate: {len(search_steps)/n_experiments}')
+        print(f'\tAverage number of steps to reach goal: {sum(search_steps)/len(search_steps)}')
+    else:
+        print(f'Success rate: 0.0')
+    print(f'\nNO SEARCH')
+    if len(nosearch_steps) > 0:
+        print(f'\tSuccess rate: {len(nosearch_steps)/n_experiments}')
+        print(f'\tAverage number of steps to reach goal: {sum(nosearch_steps)/len(nosearch_steps)}\n')
+    else:
+        print(f'Success rate: 0.0')
 
 environments = ['FourRooms', 'Maze6x6']
 
@@ -89,16 +92,14 @@ for env_name in environments:
 
     max_duration = 300
     n_experiments = 100
-
-    goal_distance = 10
-    distance_exp(eval_tf_env, agent, search_policy, goal_distance, max_duration, n_experiments)
-
-    goal_distance = 20
-    distance_exp(eval_tf_env, agent, search_policy, goal_distance, max_duration, n_experiments)
-
-    goal_distance = 40
-    distance_exp(eval_tf_env, agent, search_policy, goal_distance, max_duration, n_experiments)
-
-    goal_distance = 60
-    distance_exp(eval_tf_env, agent, search_policy, goal_distance, max_duration, n_experiments)
-
+    goal_distances = [10, 20, 40, 60]
+    
+    for goal_distance in goal_distances:
+        search_steps = []
+        nosearch_steps = []
+        print(f'{n_experiments} experiments, with max. {max_duration} timesteps and distance to goal = {goal_distance}')
+        for _ in tqdm(range(n_experiments)):
+            steps = distance_exp(eval_tf_env, agent, search_policy, goal_distance, max_duration)
+            search_steps.append(steps[1])
+            nosearch_steps.append(steps[0])
+        print_success(search_steps, nosearch_steps, n_experiments)
