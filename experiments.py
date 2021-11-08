@@ -76,16 +76,16 @@ def distance_exp(n_experiments, max_duration):
 
     distances = [10, 20, 40, 60]
     for distance in distances:
-        print(f'\tDistance set to {distance}')
-        seed = np.random.randint(0, 1000000)
-        eval_tf_env.pyenv.envs[0]._duration = max_duration
-        eval_tf_env.pyenv.envs[0].gym.set_sample_goal_args(
-            prob_constraint=1.0,
-            min_dist=distance,
-            max_dist=distance)
+        print(f'\nDistance set to {distance}')
         search = [1, 0]
         steps = [[], []]
         for _ in tqdm(range(n_experiments)):
+            seed = np.random.randint(0, 1000000)
+            eval_tf_env.pyenv.envs[0]._duration = max_duration
+            eval_tf_env.pyenv.envs[0].gym.set_sample_goal_args(
+                prob_constraint=1.0,
+                min_dist=distance,
+                max_dist=distance)
             for use_search in search:
                 steps[use_search].append(rollout(seed, eval_tf_env, agent, search_policy, use_search))
         print_results('SEARCH', steps[1], n_experiments)
@@ -117,7 +117,7 @@ def maxdist_exp(n_experiments, max_duration):
 			num_iterations=100000,
 	)
 
-    max_dists = [5, 7, 11, 13, 15]
+    max_dists = [7, 9, 11, 13, 15]
     steps_results = {dist: [] for dist in max_dists}
     
     print(f'\tExperiments with MaxDists: {max_dists}')
@@ -147,6 +147,6 @@ max_duration = 300
 environments = ['FourRooms', 'Maze6x6']
 
 for env_name in environments:
-    print(f'Starting experiments in environment: {env_name}')
+    print(f'\nStarting experiments in environment: {env_name}\n')
     distance_exp(n_experiments, max_duration)
     maxdist_exp(n_experiments, max_duration)
