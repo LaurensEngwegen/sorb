@@ -35,12 +35,14 @@ train_eval(
 		initial_collect_steps=1000,
 		eval_interval=1000,
 		num_eval_episodes=10,
-		num_iterations=30000,
+		num_iterations=100000,
 )
 
 # Initialize search policy
 replay_buffer_size = 1000
 rb_vec = fill_replay_buffer(eval_tf_env, replay_buffer_size=replay_buffer_size)
+
+
 agent.initialize_search(rb_vec, max_search_steps=7)
 search_policy = SearchPolicy(agent, rb_vec, open_loop=True)
 

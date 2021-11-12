@@ -40,8 +40,6 @@ def print_results(title, n_steps, n_experiments):
     else:
         print(f'Success rate: 0.0')
 
-
-
 def distance_exp(n_experiments, max_duration):
     tf.compat.v1.reset_default_graph()
 
@@ -139,6 +137,54 @@ def maxdist_exp(n_experiments, max_duration):
     for dist in max_dists:
         print_results(f'MaxDist = {dist}', steps_results[dist], n_experiments)
 
+def kmeans_distance_exp(n_experiments, max_duration):
+    tf.compat.v1.reset_default_graph()
+
+    max_episode_steps = 20
+    resize_factor = 5 # Inflate the environment to increase the difficulty.
+
+    tf_env = env_load_fn(env_name, max_episode_steps, resize_factor=resize_factor, terminate_on_timeout=False)
+    eval_tf_env = env_load_fn(env_name, max_episode_steps, resize_factor=resize_factor, terminate_on_timeout=True)
+
+    agent = UvfAgent(
+            tf_env.time_step_spec(),
+            tf_env.action_spec(),
+            max_episode_steps=max_episode_steps,
+            use_distributional_rl=True,
+            ensemble_size=3)
+    
+    train_eval(
+			agent,
+			tf_env,
+			eval_tf_env,
+			initial_collect_steps=1000,
+			eval_interval=1000,
+			num_eval_episodes=10,
+			num_iterations=100000,
+	)
+
+    replay_buffer_size = 1000
+
+    distances = [10,20,40,60]
+    kmeans = [1, 0]
+    
+    for distance in distances:
+        print(f'\nDistance set to {distance}')
+        steps = [[], []]
+        for use_kmeans in kmeans:
+            rb_vec = fill_replay_buffer(eval_tf_env, replay_buffer_size=replay_buffer_size, use_kmeans=use_kmeans)
+            agent.initialize_search(rb_vec, max_search_steps=7)
+            search_policy = SearchPolicy(agent, rb_vec, open_loop=True)
+            for _ in tqdm(range(n_experiments)):
+                seed = np.random.randint(0, 1000000)
+                eval_tf_env.pyenv.envs[0]._duration = max_duration
+                eval_tf_env.pyenv.envs[0].gym.set_sample_goal_args(
+                    prob_constraint=1.0,
+                    min_dist=distance,
+                    max_dist=distance)
+                steps[use_kmeans].append(rollout(seed, eval_tf_env, agent, search_policy))
+            print_results('KMEANS', steps[1], n_experiments)
+            print_results('DEFAULT', steps[0], n_experiments)
 
 
 n_experiments = 100
@@ -148,5 +194,6 @@ environments = ['FourRooms', 'Maze6x6']
 
 for env_name in environments:
     print(f'\nStarting experiments in environment: {env_name}\n')
-    distance_exp(n_experiments, max_duration)
-    maxdist_exp(n_experiments, max_duration)
+    # distance_exp(n_experiments, max_duration)
+    # maxdist_exp(n_experiments, max_duration)
+    kmeans_distance_exp(n_experiments, max_duration)

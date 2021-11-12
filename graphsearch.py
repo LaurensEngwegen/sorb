@@ -1,3 +1,4 @@
+from random import sample
 import numpy as np
 import tensorflow as tf
 import networkx as nx
@@ -5,12 +6,38 @@ import tqdm
 
 from tf_agents.policies import tf_policy
 
-def fill_replay_buffer(eval_tf_env, replay_buffer_size=1000):
+
+from visualizations import *
+import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
+
+from time import time
+
+
+def fill_replay_buffer(eval_tf_env, replay_buffer_size=1000, use_kmeans=False, visualize=False):
 	eval_tf_env.pyenv.envs[0].gym.set_sample_goal_args(prob_constraint=0.0, min_dist=0, max_dist=np.inf)
 	rb_vec = []
-	for _ in range(replay_buffer_size):
-		ts = eval_tf_env.reset()
-		rb_vec.append(ts.observation['observation'].numpy()[0])
+	# Randomly sample points and cluster those into number of points needed in buffer
+	if use_kmeans:
+		sample_size = 10000
+		obs_sample = []
+		for _ in range(sample_size):
+			ts = eval_tf_env.reset()
+			obs_sample.append(ts.observation['observation'].numpy()[0])
+		kmeans = KMeans(n_clusters=replay_buffer_size, random_state=0).fit(obs_sample)
+		rb_vec = kmeans.cluster_centers_
+	# Fill replay buffer with random points
+	else:
+		for _ in range(replay_buffer_size):
+			ts = eval_tf_env.reset()
+			rb_vec.append(ts.observation['observation'].numpy()[0])
+	rb_vec = np.array(rb_vec, dtype=np.float32)
+	# Visualize points in replay buffer
+	if visualize:
+		plt.figure(figsize=(6, 6))
+		plt.scatter(*rb_vec.T)
+		plot_walls(eval_tf_env.pyenv.envs[0].env.walls)
+		plt.show()
 	return np.array(rb_vec)
 
 
