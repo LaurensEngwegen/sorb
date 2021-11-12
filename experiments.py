@@ -183,8 +183,8 @@ def kmeans_distance_exp(n_experiments, max_duration):
                     min_dist=distance,
                     max_dist=distance)
                 steps[use_kmeans].append(rollout(seed, eval_tf_env, agent, search_policy))
-            print_results('KMEANS', steps[1], n_experiments)
-            print_results('DEFAULT', steps[0], n_experiments)
+        print_results('KMEANS', steps[1], n_experiments)
+        print_results('DEFAULT', steps[0], n_experiments)
 
 
 n_experiments = 100
