@@ -19,7 +19,7 @@ def fill_replay_buffer(eval_tf_env, replay_buffer_size=1000, use_kmeans=False, v
 	rb_vec = []
 	# Randomly sample points and cluster those into number of points needed in buffer
 	if use_kmeans:
-		sample_size = 10000
+		sample_size = replay_buffer_size*100
 		obs_sample = []
 		for _ in range(sample_size):
 			ts = eval_tf_env.reset()
