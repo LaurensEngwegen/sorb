@@ -57,7 +57,7 @@ def print_results(title, n_steps, n_experiments):
         print(f'Success rate: 0.0')
     print(f'Number of times no path was found between start and goal: {n_nones}')
 
-def distance_exp(eval_tf_env, agent, n_experiments, max_duration, print=True):
+def distance_exp(eval_tf_env, agent, n_experiments, max_duration, call_print_function=True):
     # Initialize search policy
     replay_buffer_size = 1000
     rb_vec = fill_replay_buffer(eval_tf_env, replay_buffer_size=replay_buffer_size)
@@ -79,13 +79,13 @@ def distance_exp(eval_tf_env, agent, n_experiments, max_duration, print=True):
                 max_dist=distance)
             for use_search in search:
                 steps[use_search].append(rollout(seed, eval_tf_env, agent, search_policy, use_search))
-        if print:
+        if call_print_function:
             print_results('SEARCH', steps[1], n_experiments)
             print_results('NO SEARCH', steps[0], n_experiments)
         results[distance] = steps
     return results
 
-def maxdist_exp(eval_tf_env, agent, n_experiments, max_duration, print=True):
+def maxdist_exp(eval_tf_env, agent, n_experiments, max_duration, call_print_function=True):
     max_dists = [7, 9, 11, 13, 15]
     steps_results = {dist: [] for dist in max_dists}
     
@@ -105,12 +105,12 @@ def maxdist_exp(eval_tf_env, agent, n_experiments, max_duration, print=True):
             agent.initialize_search(rb_vec, max_search_steps=max_dist)
             search_policy = SearchPolicy(agent, rb_vec, open_loop=True)
             steps_results[max_dist].append(rollout(seed, eval_tf_env, agent, search_policy))
-    if print:
+    if call_print_function:
         for dist in max_dists:
             print_results(f'MaxDist = {dist}', steps_results[dist], n_experiments)
     return steps_results
 
-def kmeans_distance_exp(eval_tf_env, agent, n_experiments, max_duration, print=True):
+def kmeans_distance_exp(eval_tf_env, agent, n_experiments, max_duration, call_print_function=True):
     replay_buffer_size = 1000
 
     distances = [10, 20, 40, 60]
@@ -131,13 +131,13 @@ def kmeans_distance_exp(eval_tf_env, agent, n_experiments, max_duration, print=T
                     min_dist=distance,
                     max_dist=distance)
                 steps[use_kmeans].append(rollout(seed, eval_tf_env, agent, search_policy))
-        if print:
+        if call_print_function:
             print_results('KMEANS', steps[1], n_experiments)
             print_results('DEFAULT', steps[0], n_experiments)
         results[distance] = steps
     return results
 
-def kmeans_buffersize_exp(eval_tf_env, agent, n_experiments, max_duration, print=True):
+def kmeans_buffersize_exp(eval_tf_env, agent, n_experiments, max_duration, call_print_function=True):
     replay_buffer_sizes = [250, 500, 750, 1000, 1250]
     kmeans = [1, 0]
     results = dict()
@@ -156,7 +156,7 @@ def kmeans_buffersize_exp(eval_tf_env, agent, n_experiments, max_duration, print
                     min_dist=10,
                     max_dist=60)
                 steps[use_kmeans].append(rollout(seed, eval_tf_env, agent, search_policy))
-        if print:
+        if call_print_function:
             print_results('KMEANS', steps[1], n_experiments)
             print_results('DEFAULT', steps[0], n_experiments)
         results[replay_buffer_size] = steps
@@ -201,7 +201,6 @@ for env_name in environments:
     results = kmeans_distance_exp(eval_tf_env, agent, n_experiments, max_duration)
     with open(f'results_kmeansdistance_{env_name}.pkl', 'wb') as f:
         pkl.dump(results, f)
-
 
     results = kmeans_buffersize_exp(eval_tf_env, agent, n_experiments, max_duration)
     with open(f'results_kmeansbuffersize_{env_name}.pkl', 'wb') as f:
