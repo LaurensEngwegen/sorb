@@ -82,8 +82,8 @@ def distance_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_durati
     agent.initialize_search(rb_vec, max_search_steps=max_search_steps)
     search_policy = SearchPolicy(agent, rb_vec, open_loop=True)
 
-    # distances = [10, 20, 40, 60]
-    distances = [30, 60, 90, 120, 150]
+    # distances = [10, 20, 40, 60] # For resize factor 5
+    distances = [30, 60, 90, 120]
     results = dict()
     for distance in distances:
         print(f'\nDistance set to {distance}')
@@ -104,8 +104,8 @@ def distance_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_durati
         results[distance] = steps
     return results
 
-def maxdist_exp(eval_tf_env, agent, n_experiments, max_duration, call_print_function=True):
-    max_dists = [5, 7, 9, 11]
+def maxdist_exp(eval_tf_env, agent, min_distance, max_distance, n_experiments, max_duration, call_print_function=True):
+    max_dists = [8,10,12,14]
     steps_results = {dist: [] for dist in max_dists}
     
     print(f'\tExperiments with MaxDists: {max_dists}')
@@ -115,8 +115,8 @@ def maxdist_exp(eval_tf_env, agent, n_experiments, max_duration, call_print_func
         eval_tf_env.pyenv.envs[0]._duration = max_duration
         eval_tf_env.pyenv.envs[0].gym.set_sample_goal_args(
             prob_constraint=1.0,
-            min_dist=10,
-            max_dist=60)
+            min_dist=min_distance,
+            max_dist=max_distance)
         for max_dist in max_dists:
             # Initialize search policy
             replay_buffer_size = 1000
@@ -132,7 +132,7 @@ def maxdist_exp(eval_tf_env, agent, n_experiments, max_duration, call_print_func
 def kmeans_distance_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration, call_print_function=True):
     replay_buffer_size = 1000
 
-    # distances = [10, 20, 40, 60]
+    # distances = [10, 20, 40, 60] # For resize factor 5
     distances = [30, 60, 90, 120]
     kmeans = [1, 0]
     results = dict()
@@ -157,7 +157,7 @@ def kmeans_distance_exp(eval_tf_env, agent, max_search_steps, n_experiments, max
         results[distance] = steps
     return results
 
-def kmeans_buffersize_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration, call_print_function=True):
+def kmeans_buffersize_exp(eval_tf_env, agent, min_distance, max_distance, max_search_steps, n_experiments, max_duration, call_print_function=True):
     replay_buffer_sizes = [250, 500, 750, 1000, 1250]
     kmeans = [1, 0]
     results = dict()
@@ -173,8 +173,8 @@ def kmeans_buffersize_exp(eval_tf_env, agent, max_search_steps, n_experiments, m
                 eval_tf_env.pyenv.envs[0]._duration = max_duration
                 eval_tf_env.pyenv.envs[0].gym.set_sample_goal_args(
                     prob_constraint=1.0,
-                    min_dist=10,
-                    max_dist=60)
+                    min_dist=min_distance,
+                    max_dist=max_distance)
                 steps[use_kmeans].append(rollout(seed, eval_tf_env, agent, search_policy))
         if call_print_function:
             print_results('KMEANS', steps[1], n_experiments)
@@ -182,40 +182,67 @@ def kmeans_buffersize_exp(eval_tf_env, agent, max_search_steps, n_experiments, m
         results[replay_buffer_size] = steps
     return results
 
+def kmeans_upsampling_exp(eval_tf_env, agent, min_distance, max_distance, max_search_steps, n_experiments, max_duration, call_print_function=True):
+    replay_buffer_sizes = [100, 250, 500, 750, 1000]
+    upsampling_factors = [5, 10, 50, 100]
+    results = dict()
+    for replay_buffer_size in replay_buffer_sizes:
+        print(f'\nReplay buffer size: {replay_buffer_size}')
+        steps = [[], [], [], []]
+        for index, upsampling_factor in enumerate(upsampling_factors):
+            rb_vec = fill_replay_buffer(eval_tf_env, replay_buffer_size=replay_buffer_size, use_kmeans=True, upsampling_factor=upsampling_factor)
+            agent.initialize_search(rb_vec, max_search_steps=max_search_steps)
+            search_policy = SearchPolicy(agent, rb_vec, open_loop=True)
+            for i in tqdm(range(n_experiments)):
+                seed = i # To ensure same start and goal states for different conditions
+                eval_tf_env.pyenv.envs[0]._duration = max_duration
+                eval_tf_env.pyenv.envs[0].gym.set_sample_goal_args(
+                    prob_constraint=1.0,
+                    min_dist=min_distance,
+                    max_dist=max_distance)
+                steps[index].append(rollout(seed, eval_tf_env, agent, search_policy))
+        if call_print_function:
+            print_results('KMEANS', steps[1], n_experiments)
+            print_results('DEFAULT', steps[0], n_experiments)
+        # Dictionary: keys = replay buffer size, values = lists with nr of steps for different upscaling factors
+        results[replay_buffer_size] = steps
+    return results
 
 
 n_experiments = 100
 max_duration = 300
-experiments = ['kmeansdistance', 'kmeansbuffersize', 'distance']#, 'maxdist']
+experiments = ['upsampling', 'kmeansbuffersize', 'maxdist']
 environments = ['FourRooms', 'Maze6x6']
 
-max_search_steps = 10
+max_search_steps = 10 # MaxDist parameter
 train_iterations = 1000000
+max_episode_steps = 20
+resize_factor = 10 # Inflate the environment to increase the difficulty.
+min_distance = 10
+max_distance = 120
 
-for exp in experiments:
-    for env_name in environments:
-        
-        max_episode_steps = 20
-        resize_factor = 10 # Inflate the environment to increase the difficulty.
+for env_name in environments:
+    # Create environments
+    tf_env = env_load_fn(env_name, max_episode_steps, resize_factor=resize_factor, terminate_on_timeout=False)
+    eval_tf_env = env_load_fn(env_name, max_episode_steps, resize_factor=resize_factor, terminate_on_timeout=True)
+    # Create and train agent
+    agent = UvfAgent(
+            tf_env.time_step_spec(),
+            tf_env.action_spec(),
+            max_episode_steps=max_episode_steps,
+            use_distributional_rl=True,
+            ensemble_size=3)
+    train_eval(
+            agent,
+            tf_env,
+            eval_tf_env,
+            initial_collect_steps=1000,
+            eval_interval=1000,
+            num_eval_episodes=10,
+            num_iterations=train_iterations,
+    )
 
-        tf_env = env_load_fn(env_name, max_episode_steps, resize_factor=resize_factor, terminate_on_timeout=False)
-        eval_tf_env = env_load_fn(env_name, max_episode_steps, resize_factor=resize_factor, terminate_on_timeout=True)
-
-        agent = UvfAgent(
-                tf_env.time_step_spec(),
-                tf_env.action_spec(),
-                max_episode_steps=max_episode_steps,
-                use_distributional_rl=True,
-                ensemble_size=3)
-        train_eval(
-                agent,
-                tf_env,
-                eval_tf_env,
-                initial_collect_steps=1000,
-                eval_interval=1000,
-                num_eval_episodes=10,
-                num_iterations=train_iterations,
-        )
+    for exp in experiments:
         print(f'\nStarting experiments in environment: {env_name}\n')
 
         # Pickles will contain a dictionary consisting of:
@@ -226,56 +253,15 @@ for exp in experiments:
 
         if exp == 'kmeansdistance':
             results = kmeans_distance_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration)
-        
         elif exp == 'kmeansbuffersize':
-            results = kmeans_buffersize_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration)
-        
+            results = kmeans_buffersize_exp(eval_tf_env, agent, min_distance, max_distance, max_search_steps, n_experiments, max_duration)
         elif exp == 'distance':
             results = distance_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration)
-        else:
-            results = maxdist_exp(eval_tf_env, agent, n_experiments, max_duration)
+        elif exp == 'maxdist':
+            results = maxdist_exp(eval_tf_env, agent, min_distance, max_distance, n_experiments, max_duration)
+        elif exp == 'upsampling':
+            results = kmeans_upsampling_exp(eval_tf_env, agent, min_distance, max_distance, n_experiments, max_duration)
 
 
-
-        with open(f'results_{exp}_{env_name}_resize{resize_factor}_trainiters{int(train_iterations/1000)}k.pkl', 'wb') as f:
-                pkl.dump(results, f)
-
-'''
-for exp in experiments:
-    for env_name in environments:
-        tf.compat.v1.reset_default_graph()
-
-        max_episode_steps = 20
-        resize_factor = 10 # Inflate the environment to increase the difficulty.
-        tf_env = env_load_fn(env_name, max_episode_steps, resize_factor=resize_factor, terminate_on_timeout=False)
-        eval_tf_env = env_load_fn(env_name, max_episode_steps, resize_factor=resize_factor, terminate_on_timeout=True)
-        
-        use_distributional_rl = True
-        ensemble_size = 3
-        train_iterations = 200000
-        agent = create_agent(tf_env, eval_tf_env, use_distributional_rl, ensemble_size, train_iterations)
-
-        max_search_steps = 10
-        print(f'\nStarting experiments in environment: {env_name}\n')
-
-        # Pickles will contain a dictionary consisting of:
-        # Keys corresponding to the conditions (i.e. distances, replay buffer sizes, etc.)
-        # that will contain list(s) with number of steps it took to complete the task
-            # 0 -> Task was not completed within max_duration
-            # None -> No path was found between start and goal
-
-        if exp == 'kmeansdistance':
-            results = kmeans_distance_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration)
-        
-        elif exp == 'kmeansbuffersize':
-            results = kmeans_buffersize_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration)
-        
-        elif exp == 'distance':
-            results = distance_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration)
-        else:
-            results = maxdist_exp(eval_tf_env, agent, n_experiments, max_duration)
-        
-        
         with open(f'results_{exp}_{env_name}_resize{resize_factor}_trainiters{int(train_iterations/1000)}k.pkl', 'wb') as f:
             pkl.dump(results, f)
-'''
