@@ -92,7 +92,10 @@ def visualize_rollouts(eval_tf_env, agent, search_policy, rb_vec, distance=None)
 				break
 			obs_vec.append(ts.observation['observation'].numpy()[0])
 			if use_search:
-				action = search_policy.action(ts)
+				try:
+					action = search_policy.action(ts)
+				except:
+					print(f'No path found from start to goal')
 			else:
 				action = agent.policy.action(ts)
 
