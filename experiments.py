@@ -202,8 +202,10 @@ def kmeans_upsampling_exp(eval_tf_env, agent, min_distance, max_distance, max_se
                     max_dist=max_distance)
                 steps[index].append(rollout(seed, eval_tf_env, agent, search_policy))
         if call_print_function:
-            print_results('KMEANS', steps[1], n_experiments)
-            print_results('DEFAULT', steps[0], n_experiments)
+            print_results('UPSAMPLING: 5', steps[0], n_experiments)
+            print_results('UPSAMPLING: 10', steps[1], n_experiments)
+            print_results('UPSAMPLING: 50', steps[2], n_experiments)
+            print_results('UPSAMPLING: 100', steps[3], n_experiments)
         # Dictionary: keys = replay buffer size, values = lists with nr of steps for different upscaling factors
         results[replay_buffer_size] = steps
     return results
@@ -242,8 +244,9 @@ for env_name in environments:
             num_iterations=train_iterations,
     )
 
+    print(f'\nStarting experiments in environment: {env_name}\n')
+    
     for exp in experiments:
-        print(f'\nStarting experiments in environment: {env_name}\n')
 
         # Pickles will contain a dictionary consisting of:
         # Keys corresponding to the conditions (i.e. distances, replay buffer sizes, etc.)
@@ -260,7 +263,7 @@ for env_name in environments:
         elif exp == 'maxdist':
             results = maxdist_exp(eval_tf_env, agent, min_distance, max_distance, n_experiments, max_duration)
         elif exp == 'upsampling':
-            results = kmeans_upsampling_exp(eval_tf_env, agent, min_distance, max_distance, n_experiments, max_duration)
+            results = kmeans_upsampling_exp(eval_tf_env, agent, min_distance, max_distance, max_search_steps, n_experiments, max_duration)
 
 
         with open(f'results_{exp}_{env_name}_resize{resize_factor}_trainiters{int(train_iterations/1000)}k.pkl', 'wb') as f:
