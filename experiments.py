@@ -12,24 +12,6 @@ from tqdm import tqdm
 import numpy as np
 import pickle as pkl
 
-def create_agent(tf_env, eval_tf_env, max_episode_steps, use_distr_rl=True, ensemble_size=3, train_iterations=100000):
-    new_agent = UvfAgent(
-                tf_env.time_step_spec(),
-                tf_env.action_spec(),
-                max_episode_steps=max_episode_steps,
-                use_distributional_rl=use_distr_rl,
-                ensemble_size=ensemble_size)
-    train_eval(
-			new_agent,
-			tf_env,
-			eval_tf_env,
-			initial_collect_steps=1000,
-			eval_interval=1000,
-			num_eval_episodes=10,
-			num_iterations=train_iterations,
-	)        
-    return new_agent
-
 def rollout(seed, eval_tf_env, agent, search_policy, use_search=1):
     np.random.seed(seed)
     ts = eval_tf_env.reset()
@@ -105,29 +87,32 @@ def distance_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_durati
     return results
 
 def maxdist_exp(eval_tf_env, agent, min_distance, max_distance, n_experiments, max_duration, call_print_function=True):
-    max_dists = [8,10,12,14]
-    steps_results = {dist: [] for dist in max_dists}
-    
-    print(f'\tExperiments with MaxDists: {max_dists}')
+    max_dist_params = [6,8,10,12,14]
+    kmeans = [1, 0]
+    results = dict()
+    print(f'\tExperiments with MaxDists: {max_dist_params}')
 
-    for i in tqdm(range(n_experiments)):
-        seed = i # To ensure same start and goal states for different conditions
-        eval_tf_env.pyenv.envs[0]._duration = max_duration
-        eval_tf_env.pyenv.envs[0].gym.set_sample_goal_args(
-            prob_constraint=1.0,
-            min_dist=min_distance,
-            max_dist=max_distance)
-        for max_dist in max_dists:
+    for max_dist_param in max_dist_params:
+        print(f'\nMaxDist set to {max_dist_param}')
+        steps = [[], []]
+        for use_kmeans in kmeans:
             # Initialize search policy
-            replay_buffer_size = 1000
-            rb_vec = fill_replay_buffer(eval_tf_env, replay_buffer_size=replay_buffer_size)
-            agent.initialize_search(rb_vec, max_search_steps=max_dist)
+            rb_vec = fill_replay_buffer(eval_tf_env, replay_buffer_size=1000, use_kmeans=use_kmeans, upsampling_factor=100)
+            agent.initialize_search(rb_vec, max_search_steps=max_dist_param)
             search_policy = SearchPolicy(agent, rb_vec, open_loop=True)
-            steps_results[max_dist].append(rollout(seed, eval_tf_env, agent, search_policy))
-    if call_print_function:
-        for dist in max_dists:
-            print_results(f'MaxDist = {dist}', steps_results[dist], n_experiments)
-    return steps_results
+            for i in tqdm(range(n_experiments)):
+                seed = i # To ensure same start and goal states for different conditions
+                eval_tf_env.pyenv.envs[0]._duration = max_duration
+                eval_tf_env.pyenv.envs[0].gym.set_sample_goal_args(
+                    prob_constraint=1.0,
+                    min_dist=min_distance,
+                    max_dist=max_distance)
+                steps[use_kmeans].append(rollout(seed, eval_tf_env, agent, search_policy))
+        if call_print_function:
+            print_results('KMEANS', steps[1], n_experiments)
+            print_results('DEFAULT', steps[0], n_experiments)
+        results[max_dist_param] = steps
+    return results
 
 def kmeans_distance_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration, call_print_function=True):
     replay_buffer_size = 1000
@@ -213,27 +198,28 @@ def kmeans_upsampling_exp(eval_tf_env, agent, min_distance, max_distance, max_se
 
 n_experiments = 100
 max_duration = 300
-experiments = ['upsampling', 'kmeansbuffersize', 'maxdist']
+experiments = ['maxdist']
 environments = ['FourRooms', 'Maze6x6']
 
 max_search_steps = 10 # MaxDist parameter
 train_iterations = 1000000
 max_episode_steps = 20
 resize_factor = 10 # Inflate the environment to increase the difficulty.
-min_distance = 10
-max_distance = 120
+min_distance = 10 # Minimum distance between sampled (start, goal) states
+max_distance = 120 # Maximum distance between sampled (start, goal) states
 
 for env_name in environments:
     # Create environments
     tf_env = env_load_fn(env_name, max_episode_steps, resize_factor=resize_factor, terminate_on_timeout=False)
     eval_tf_env = env_load_fn(env_name, max_episode_steps, resize_factor=resize_factor, terminate_on_timeout=True)
-    # Create and train agent
+    # Create agent
     agent = UvfAgent(
             tf_env.time_step_spec(),
             tf_env.action_spec(),
             max_episode_steps=max_episode_steps,
             use_distributional_rl=True,
             ensemble_size=3)
+    # Train agent
     train_eval(
             agent,
             tf_env,
