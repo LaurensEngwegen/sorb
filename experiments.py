@@ -182,11 +182,55 @@ def kmeans_buffersize_exp(eval_tf_env, agent, max_search_steps, n_experiments, m
         results[replay_buffer_size] = steps
     return results
 
+def kmeans_same_buffer_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration, call_print_function=True):
+    fractions = [0.1, 0.25, 0.5, 0.75, 1.0]
+    results = dict()
+    for fraction in fractions:
+        print(f'\nFraction rate: {fraction}')
+        steps = []
 
+        rb_vec = fill_same_replay_buffer(eval_tf_env, fraction=fraction)
+        agent.initialize_search(rb_vec, max_search_steps=max_search_steps)
+        search_policy = SearchPolicy(agent, rb_vec, open_loop=True)
+        for i in tqdm(range(n_experiments)):
+            seed = i # To ensure same start and goal states for different conditions
+            eval_tf_env.pyenv.envs[0]._duration = max_duration
+            eval_tf_env.pyenv.envs[0].gym.set_sample_goal_args(
+                prob_constraint=1.0,
+                min_dist=10,
+                max_dist=120)
+            steps.append(rollout(seed, eval_tf_env, agent, search_policy))
+        if call_print_function:
+            print_results('KMEANS', steps, n_experiments)
+        results[fraction] = steps
+    return results
+
+def addition_same_buffer_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration, call_print_function=True):
+    fractions = [0.1, 0.25]
+    results = dict()
+    for fraction in fractions:
+        print(f'\nFraction rate: {fraction}, max_search_steps: {max_search_steps}')
+        steps = []
+
+        rb_vec = fill_same_replay_buffer(eval_tf_env, fraction=fraction)
+        agent.initialize_search(rb_vec, max_search_steps=max_search_steps)
+        search_policy = SearchPolicy(agent, rb_vec, open_loop=True)
+        for i in tqdm(range(n_experiments)):
+            seed = i # To ensure same start and goal states for different conditions
+            eval_tf_env.pyenv.envs[0]._duration = max_duration
+            eval_tf_env.pyenv.envs[0].gym.set_sample_goal_args(
+                prob_constraint=1.0,
+                min_dist=10,
+                max_dist=120)
+            steps.append(rollout(seed, eval_tf_env, agent, search_policy))
+        if call_print_function:
+            print_results('KMEANS', steps, n_experiments)
+        results[fraction] = steps
+    return results
 
 n_experiments = 100
 max_duration = 300
-experiments = ['kmeansdistance', 'kmeansbuffersize', 'distance']#, 'maxdist']
+experiments = ['kmeansdistance', 'kmeansbuffersize', 'distance', 'kmeanssamebuffer', 'additionsamebuffer']#, 'maxdist']
 environments = ['FourRooms', 'Maze6x6']
 
 max_search_steps = 10
@@ -226,6 +270,14 @@ for exp in experiments:
 
         if exp == 'kmeansdistance':
             results = kmeans_distance_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration)
+	
+	elif exp == 'kmeanssamebuffer':
+            results = kmeans_same_buffer_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration)
+	
+	elif exp == 'additionsamebuffer':
+            maxsearchsteps = [50, 70, 100]
+            for max_search_steps in maxsearchsteps:
+                results = addition_same_buffer_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration)
         
         elif exp == 'kmeansbuffersize':
             results = kmeans_buffersize_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration)
