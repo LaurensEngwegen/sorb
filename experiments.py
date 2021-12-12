@@ -87,7 +87,7 @@ def distance_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_durati
     return results
 
 def maxdist_exp(eval_tf_env, agent, min_distance, max_distance, n_experiments, max_duration, call_print_function=True):
-    max_dist_params = [6,8,10,12,14]
+    max_dist_params = [5,6,7,8,9,10,12,14]
     kmeans = [1, 0]
     results = dict()
     print(f'\tExperiments with MaxDists: {max_dist_params}')
@@ -169,11 +169,11 @@ def kmeans_buffersize_exp(eval_tf_env, agent, min_distance, max_distance, max_se
 
 def kmeans_upsampling_exp(eval_tf_env, agent, min_distance, max_distance, max_search_steps, n_experiments, max_duration, call_print_function=True):
     replay_buffer_sizes = [100, 250, 500, 750, 1000]
-    upsampling_factors = [5, 10, 50, 100]
+    upsampling_factors = [1, 5, 10, 50, 100]
     results = dict()
     for replay_buffer_size in replay_buffer_sizes:
         print(f'\nReplay buffer size: {replay_buffer_size}')
-        steps = [[], [], [], []]
+        steps = [[], [], [], [], []]
         for index, upsampling_factor in enumerate(upsampling_factors):
             rb_vec = fill_replay_buffer(eval_tf_env, replay_buffer_size=replay_buffer_size, use_kmeans=True, upsampling_factor=upsampling_factor)
             agent.initialize_search(rb_vec, max_search_steps=max_search_steps)
@@ -187,10 +187,11 @@ def kmeans_upsampling_exp(eval_tf_env, agent, min_distance, max_distance, max_se
                     max_dist=max_distance)
                 steps[index].append(rollout(seed, eval_tf_env, agent, search_policy))
         if call_print_function:
-            print_results('UPSAMPLING: 5', steps[0], n_experiments)
-            print_results('UPSAMPLING: 10', steps[1], n_experiments)
-            print_results('UPSAMPLING: 50', steps[2], n_experiments)
-            print_results('UPSAMPLING: 100', steps[3], n_experiments)
+            print_results('UPSAMPLING: 1', steps[0], n_experiments)
+            print_results('UPSAMPLING: 5', steps[1], n_experiments)
+            print_results('UPSAMPLING: 10', steps[2], n_experiments)
+            print_results('UPSAMPLING: 50', steps[3], n_experiments)
+            print_results('UPSAMPLING: 100', steps[4], n_experiments)
         # Dictionary: keys = replay buffer size, values = lists with nr of steps for different upscaling factors
         results[replay_buffer_size] = steps
 
@@ -242,8 +243,8 @@ def addition_same_buffer_exp(eval_tf_env, agent, max_search_steps, n_experiments
 
 n_experiments = 100
 max_duration = 300
-experiments = ['kmeansdistance', 'kmeansbuffersize', 'distance', 'kmeanssamebuffer', 'additionsamebuffer']#, 'maxdist']
-environments = ['FourRooms', 'Maze6x6']
+experiments = ['upsampling']
+environments = ['FourRooms', 'Spiral11x11']
 
 max_search_steps = 10 # MaxDist parameter
 train_iterations = 1000000
@@ -301,7 +302,8 @@ for env_name in environments:
             for max_search_steps in maxsearchsteps:
                 results = addition_same_buffer_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration)
         
-
-
+        # Save results dict in pickle
         with open(f'results_{exp}_{env_name}_resize{resize_factor}_trainiters{int(train_iterations/1000)}k.pkl', 'wb') as f:
             pkl.dump(results, f)
+
+

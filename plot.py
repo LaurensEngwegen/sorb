@@ -34,6 +34,7 @@ def plot_successrate(results, env, conditions, xlabel):
     x = [] # Used for the label locations
     x.append(np.arange(len(labels)))
     width = 0.2  # The width of the bars
+    plt.rcParams.update({'font.size': 15})
 
     fig, ax = plt.subplots()
     for i in range(len(conditions)):
@@ -43,7 +44,7 @@ def plot_successrate(results, env, conditions, xlabel):
     ax.set_ylim([0,1])
     ax.set_ylabel('Success rate')
     ax.set_xlabel(xlabel)
-    ax.set_title(f'Performance on {env} over {n_experiments} evaluations')
+    ax.set_title(f'Success rate in {env}')
     ax.set_xticks(x[0]+(len(conditions)-1)*(width/2))
     ax.set_xticklabels(labels)
     ax.grid(alpha=0.5)
@@ -51,24 +52,36 @@ def plot_successrate(results, env, conditions, xlabel):
     fig.tight_layout()
     plt.show()
 
+def print_nones(results, conditions):
+
+    for i in range(len(conditions)):
+        print(f'Condition: {conditions[i]}')
+        for paramvalue in results.keys():
+            n_nones = sum(x is None for x in results[paramvalue][i])
+            print(f'Parameter value: {paramvalue},\tNones = {n_nones}')
+
 def plot_experiments(experiments, env, resize_factor, training_iters):
     plot_args = {
         'distance': {'conditions': ['no search', 'search'], 'xlabel': 'Distance to goal'}, 
         'kmeansdistance': {'conditions': ['default', 'k-means'], 'xlabel': 'Distance to goal'},
         'kmeansbuffersize': {'conditions': ['default', 'k-means'], 'xlabel': 'Replay buffer size'},
         'maxdist': {'conditions': ['default', 'k-means'], 'xlabel': 'MaxDist parameter'},
-        'upsampling': {'conditions': ['5', '10', '50', '100'], 'xlabel': 'Replay buffer size'}
+        'upsampling': {'conditions': ['1', '5', '10', '50', '100'], 'xlabel': 'Replay buffer size'}
         }
     for exp in experiments:
         with open(f'results/results_{exp}_{env}_resize{resize_factor}_trainiters{int(training_iters/1000)}k.pkl', 'rb') as f:
             results = pkl.load(f)
-        plot_successrate(results, env, **plot_args[exp])
+        # plot_successrate(results, env, **plot_args[exp])
+        print(f'\nCounting Nones for experiment "{exp}" in environment {env}')
+        print_nones(results, plot_args[exp]['conditions'])
 
-
-env = 'FourRooms'
+envs = ['FourRooms', 'Spiral11x11']
 resize_factor = 10
 training_iters = 1000000
 # Possible experiments: 'distance', 'kmeansdistance', 'kmeansbuffersize', 'maxdist', 'upsampling'
-experiments = ['upsampling']
+experiments = ['distance', 'kmeansdistance', 'kmeansbuffersize', 'maxdist']
 
-plot_experiments(experiments, env, resize_factor, training_iters)
+for env in envs:
+    plot_experiments(experiments, env, resize_factor, training_iters)
+
+
