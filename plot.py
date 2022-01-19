@@ -33,7 +33,7 @@ def plot_successrate(results, env, conditions, xlabel):
     labels = [key for key in results.keys()]
     x = [] # Used for the label locations
     x.append(np.arange(len(labels)))
-    width = 0.2  # The width of the bars
+    width = 0.15  # The width of the bars
     plt.rcParams.update({'font.size': 15})
 
     fig, ax = plt.subplots()
@@ -53,12 +53,24 @@ def plot_successrate(results, env, conditions, xlabel):
     plt.show()
 
 def print_nones(results, conditions):
-
     for i in range(len(conditions)):
         print(f'Condition: {conditions[i]}')
         for paramvalue in results.keys():
             n_nones = sum(x is None for x in results[paramvalue][i])
             print(f'Parameter value: {paramvalue},\tNones = {n_nones}')
+
+def print_avg_steps(results, conditions):
+    for i in range(len(conditions)):
+        print(f'Condition: {conditions[i]}')
+        for paramvalue in results.keys():
+            n_steps = 0
+            successes = 0
+            for j in range(len(results[paramvalue][i])):
+                if results[paramvalue][i][j] is not None and results[paramvalue][i][j] > 0:
+                    n_steps += results[paramvalue][i][j]
+                    successes += 1
+            if successes > 0:
+                print(f'Average number of steps to reach goal: {n_steps/successes}')
 
 def plot_experiments(experiments, env, resize_factor, training_iters):
     plot_args = {
@@ -71,15 +83,16 @@ def plot_experiments(experiments, env, resize_factor, training_iters):
     for exp in experiments:
         with open(f'results/results_{exp}_{env}_resize{resize_factor}_trainiters{int(training_iters/1000)}k.pkl', 'rb') as f:
             results = pkl.load(f)
-        # plot_successrate(results, env, **plot_args[exp])
-        print(f'\nCounting Nones for experiment "{exp}" in environment {env}')
-        print_nones(results, plot_args[exp]['conditions'])
+        plot_successrate(results, env, **plot_args[exp])
+        # print(f'\nCounting Nones for experiment "{exp}" in environment {env}')
+        # print_nones(results, plot_args[exp]['conditions'])
+        print_avg_steps(results, plot_args[exp]['conditions'])
 
-envs = ['FourRooms', 'Spiral11x11']
+envs = ['FourRooms']
 resize_factor = 10
 training_iters = 1000000
 # Possible experiments: 'distance', 'kmeansdistance', 'kmeansbuffersize', 'maxdist', 'upsampling'
-experiments = ['distance', 'kmeansdistance', 'kmeansbuffersize', 'maxdist']
+experiments = ['upsampling']
 
 for env in envs:
     plot_experiments(experiments, env, resize_factor, training_iters)
