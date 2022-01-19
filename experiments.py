@@ -194,6 +194,7 @@ def kmeans_upsampling_exp(eval_tf_env, agent, min_distance, max_distance, max_se
             print_results('UPSAMPLING: 100', steps[4], n_experiments)
         # Dictionary: keys = replay buffer size, values = lists with nr of steps for different upscaling factors
         results[replay_buffer_size] = steps
+    return results
 
 def kmeans_same_buffer_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration, call_print_function=True):
     fractions = [0.1, 0.25, 0.5, 0.75, 1.0]

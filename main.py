@@ -15,7 +15,7 @@ tf.compat.v1.reset_default_graph()
 # tf.reset_default_graph() in the cell above before training.
 max_episode_steps = 20
 env_name = 'FourRooms'	# Choose one of the environments shown above. 
-resize_factor = 5 # Inflate the environment to increase the difficulty.
+resize_factor = 10 # Inflate the environment to increase the difficulty.
 
 tf_env = env_load_fn(env_name, max_episode_steps, resize_factor=resize_factor, terminate_on_timeout=False)
 eval_tf_env = env_load_fn(env_name, max_episode_steps, resize_factor=resize_factor, terminate_on_timeout=True)
@@ -35,14 +35,15 @@ train_eval(
 		initial_collect_steps=1000,
 		eval_interval=1000,
 		num_eval_episodes=10,
-		num_iterations=100000,
+		num_iterations=10,
 )
 
 # Initialize search policy
 replay_buffer_size = 1000
-rb_vec = fill_replay_buffer(eval_tf_env, replay_buffer_size=replay_buffer_size)
+rb_vec = fill_replay_buffer(eval_tf_env, replay_buffer_size=replay_buffer_size, use_kmeans=True, upsampling_factor=1, visualize=True)
+# rb_vec = fill_same_replay_buffer(eval_tf_env, fraction=1.0, replay_buffer_size=replay_buffer_size, visualize=True)
 
-
+'''
 agent.initialize_search(rb_vec, max_search_steps=7)
 search_policy = SearchPolicy(agent, rb_vec, open_loop=True)
 
@@ -55,3 +56,4 @@ while stop != 'q':
 	visualize_rollouts(eval_tf_env, agent, search_policy, rb_vec, distance)
 	stop = input('Input q to quit, c to change distance, anything else for another rollout: ')
 
+'''
