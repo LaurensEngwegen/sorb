@@ -57,6 +57,7 @@ def print_results(title, n_steps, n_experiments):
         print(f'\tSuccess rate: 0.0')
     print(f'\tNumber of times no path was found between start and goal: {n_nones}/{n_experiments}')
 
+# Default experiments of different distance from original paper
 def distance_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration, call_print_function=True):
     # Initialize search policy
     replay_buffer_size = 1000
@@ -86,6 +87,7 @@ def distance_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_durati
         results[distance] = steps
     return results
 
+# Experiments of maximum distance
 def maxdist_exp(eval_tf_env, agent, min_distance, max_distance, n_experiments, max_duration, call_print_function=True):
     max_dist_params = [5,6,7,8,9,10,12,14]
     kmeans = [1, 0]
@@ -114,6 +116,7 @@ def maxdist_exp(eval_tf_env, agent, min_distance, max_distance, n_experiments, m
         results[max_dist_param] = steps
     return results
 
+# Experiments of different distance with k-means clustering
 def kmeans_distance_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration, call_print_function=True):
     replay_buffer_size = 1000
 
@@ -142,6 +145,7 @@ def kmeans_distance_exp(eval_tf_env, agent, max_search_steps, n_experiments, max
         results[distance] = steps
     return results
 
+# Experiments of different reply buffer size with k-means clustering
 def kmeans_buffersize_exp(eval_tf_env, agent, min_distance, max_distance, max_search_steps, n_experiments, max_duration, call_print_function=True):
     replay_buffer_sizes = [250, 500, 750, 1000, 1250]
     kmeans = [1, 0]
@@ -167,6 +171,7 @@ def kmeans_buffersize_exp(eval_tf_env, agent, min_distance, max_distance, max_se
         results[replay_buffer_size] = steps
     return results
 
+# Experiments of different upsampling factor of reply buffer size with k-means clustering
 def kmeans_upsampling_exp(eval_tf_env, agent, min_distance, max_distance, max_search_steps, n_experiments, max_duration, call_print_function=True):
     replay_buffer_sizes = [100, 250, 500, 750, 1000]
     upsampling_factors = [1, 5, 10, 50, 100]
@@ -196,6 +201,7 @@ def kmeans_upsampling_exp(eval_tf_env, agent, min_distance, max_distance, max_se
         results[replay_buffer_size] = steps
     return results
 
+# Experiments of different clustering fractions with same reply buffer size with k-means clustering
 def kmeans_same_buffer_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration, call_print_function=True):
     fractions = [0.1, 0.25, 0.5, 0.75, 1.0]
     results = dict()
@@ -203,7 +209,7 @@ def kmeans_same_buffer_exp(eval_tf_env, agent, max_search_steps, n_experiments, 
         print(f'\nFraction rate: {fraction}')
         steps = []
 
-        rb_vec = fill_same_replay_buffer(eval_tf_env, fraction=fraction)
+        rb_vec = fill_replay_buffer(eval_tf_env, use_same=True, fraction=fraction)
         agent.initialize_search(rb_vec, max_search_steps=max_search_steps)
         search_policy = SearchPolicy(agent, rb_vec, open_loop=True)
         for i in tqdm(range(n_experiments)):
@@ -219,6 +225,7 @@ def kmeans_same_buffer_exp(eval_tf_env, agent, max_search_steps, n_experiments, 
         results[fraction] = steps
     return results
 
+# Expeiremnts of additional same reply buffer size experiments, which explore the effect of different max search steps
 def addition_same_buffer_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration, call_print_function=True):
     fractions = [0.1, 0.25]
     results = dict()
@@ -226,7 +233,7 @@ def addition_same_buffer_exp(eval_tf_env, agent, max_search_steps, n_experiments
         print(f'\nFraction rate: {fraction}, max_search_steps: {max_search_steps}')
         steps = []
 
-        rb_vec = fill_same_replay_buffer(eval_tf_env, fraction=fraction)
+        rb_vec = fill_replay_buffer(eval_tf_env, use_same=True, fraction=fraction)
         agent.initialize_search(rb_vec, max_search_steps=max_search_steps)
         search_policy = SearchPolicy(agent, rb_vec, open_loop=True)
         for i in tqdm(range(n_experiments)):
@@ -241,70 +248,3 @@ def addition_same_buffer_exp(eval_tf_env, agent, max_search_steps, n_experiments
             print_results('KMEANS', steps, n_experiments)
         results[fraction] = steps
     return results
-
-n_experiments = 100
-max_duration = 300
-experiments = ['upsampling']
-environments = ['FourRooms', 'Spiral11x11']
-
-max_search_steps = 10 # MaxDist parameter
-train_iterations = 1000000
-max_episode_steps = 20
-resize_factor = 10 # Inflate the environment to increase the difficulty.
-min_distance = 10 # Minimum distance between sampled (start, goal) states
-max_distance = 120 # Maximum distance between sampled (start, goal) states
-
-for env_name in environments:
-    # Create environments
-    tf_env = env_load_fn(env_name, max_episode_steps, resize_factor=resize_factor, terminate_on_timeout=False)
-    eval_tf_env = env_load_fn(env_name, max_episode_steps, resize_factor=resize_factor, terminate_on_timeout=True)
-    # Create agent
-    agent = UvfAgent(
-            tf_env.time_step_spec(),
-            tf_env.action_spec(),
-            max_episode_steps=max_episode_steps,
-            use_distributional_rl=True,
-            ensemble_size=3)
-    # Train agent
-    train_eval(
-            agent,
-            tf_env,
-            eval_tf_env,
-            initial_collect_steps=1000,
-            eval_interval=1000,
-            num_eval_episodes=10,
-            num_iterations=train_iterations,
-    )
-
-    print(f'\nStarting experiments in environment: {env_name}\n')
-    
-    for exp in experiments:
-
-        # Pickles will contain a dictionary consisting of:
-        # Keys corresponding to the conditions (i.e. distances, replay buffer sizes, etc.)
-        # that will contain list(s) with number of steps it took to complete the task
-            # 0 -> Task was not completed within max_duration
-            # None -> No path was found between start and goal
-
-        if exp == 'kmeansdistance':
-            results = kmeans_distance_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration)
-        elif exp == 'kmeansbuffersize':
-            results = kmeans_buffersize_exp(eval_tf_env, agent, min_distance, max_distance, max_search_steps, n_experiments, max_duration)
-        elif exp == 'distance':
-            results = distance_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration)
-        elif exp == 'maxdist':
-            results = maxdist_exp(eval_tf_env, agent, min_distance, max_distance, n_experiments, max_duration)
-        elif exp == 'upsampling':
-            results = kmeans_upsampling_exp(eval_tf_env, agent, min_distance, max_distance, max_search_steps, n_experiments, max_duration)
-        elif exp == 'kmeanssamebuffer':
-            results = kmeans_same_buffer_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration)
-        elif exp == 'additionsamebuffer':
-            maxsearchsteps = [50, 70, 100]
-            for max_search_steps in maxsearchsteps:
-                results = addition_same_buffer_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration)
-        
-        # Save results dict in pickle
-        with open(f'results_{exp}_{env_name}_resize{resize_factor}_trainiters{int(train_iterations/1000)}k.pkl', 'wb') as f:
-            pkl.dump(results, f)
-
-

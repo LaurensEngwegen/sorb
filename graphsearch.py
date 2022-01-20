@@ -14,7 +14,8 @@ from sklearn.cluster import KMeans
 from time import time
 
 
-def fill_replay_buffer(eval_tf_env, replay_buffer_size=1000, use_kmeans=False, upsampling_factor=100, visualize=False):
+def fill_replay_buffer(eval_tf_env, replay_buffer_size=1000, use_same=False, fraction=1.0, use_kmeans=False, upsampling_factor=100, visualize=False):
+	print(use_kmeans)
 	eval_tf_env.pyenv.envs[0].gym.set_sample_goal_args(prob_constraint=0.0, min_dist=0, max_dist=np.inf)
 	rb_vec = []
 	# Randomly sample points and cluster those into number of points needed in buffer
@@ -26,25 +27,8 @@ def fill_replay_buffer(eval_tf_env, replay_buffer_size=1000, use_kmeans=False, u
 			obs_sample.append(ts.observation['observation'].numpy()[0])
 		kmeans = KMeans(n_clusters=replay_buffer_size, random_state=0).fit(obs_sample)
 		rb_vec = kmeans.cluster_centers_
-	# Fill replay buffer with random points
-	else:
-		for _ in range(replay_buffer_size):
-			ts = eval_tf_env.reset()
-			rb_vec.append(ts.observation['observation'].numpy()[0])
-	rb_vec = np.array(rb_vec, dtype=np.float32)
-	# Visualize points in replay buffer
-	if visualize:
-		plt.figure(figsize=(6, 6))
-		plt.scatter(*rb_vec.T)
-		plot_walls(eval_tf_env.pyenv.envs[0].env.walls)
-		plt.show()
-	return np.array(rb_vec)
-
-def fill_same_replay_buffer(eval_tf_env, fraction=1.0, replay_buffer_size=1000, visualize=False):
-	eval_tf_env.pyenv.envs[0].gym.set_sample_goal_args(prob_constraint=0.0, min_dist=0, max_dist=np.inf)
-	rb_vec = []
-	# Randomly sample points and cluster those into number of points needed in buffer
-	if fraction != 1.0:
+	# For same reply buffer size expeirments
+	elif use_same and fraction!=1.0:
 		sample_size = replay_buffer_size
 		obs_sample = []
 		for _ in range(sample_size):
@@ -65,6 +49,7 @@ def fill_same_replay_buffer(eval_tf_env, fraction=1.0, replay_buffer_size=1000, 
 		plot_walls(eval_tf_env.pyenv.envs[0].env.walls)
 		plt.show()
 	return np.array(rb_vec)
+
 
 class SearchPolicy(tf_policy.Base):	
 	def __init__(self, agent, rb_vec, open_loop=False):
