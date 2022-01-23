@@ -1,6 +1,7 @@
 import gym
 import numpy as np
 import networkx as nx
+import pickle
 
 from tf_agents.environments import wrappers
 from tf_agents.environments import gym_wrapper
@@ -9,14 +10,12 @@ from tf_agents.environments import tf_py_environment
 #@title Implement the 2D navigation environment and helper functions.
 
 #import all environments from pkl files
-import pickle
-import os
-path = './env/'
-files= os.listdir(path)
-WALLS={}
-for file in files:
-	f = open(path+file, 'rb')
-	WALLS[file.split('.')[0]] = pickle.load(f)
+def import_env(env_name):
+	path = './env/'
+	global WALLS
+	WALLS={}
+	f = open(path+env_name+'.pkl', 'rb')
+	WALLS[env_name] = pickle.load(f)
 	f.close()
 
 def resize_walls(walls, factor):
@@ -336,6 +335,7 @@ def env_load_fn(environment_name,
 	Returns:
 		A PyEnvironmentBase instance.
 	"""
+	import_env(environment_name)
 	gym_env = PointEnv(walls=environment_name,
 										 resize_factor=resize_factor)
 		
