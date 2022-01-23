@@ -70,8 +70,8 @@ def distance_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_durati
     results = dict()
     for distance in distances:
         print(f'\nDistance set to {distance}')
-        search = [1, 0]
-        steps = [[], []]
+        search = {'search': 1, 'no search': 0}
+        steps = {'search': [], 'no search': []}
         for i in tqdm(range(n_experiments)):
             seed = i # To ensure same start and goal states for different conditions
             eval_tf_env.pyenv.envs[0]._duration = max_duration
@@ -80,26 +80,26 @@ def distance_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_durati
                 min_dist=distance,
                 max_dist=distance)
             for use_search in search:
-                steps[use_search].append(rollout(seed, eval_tf_env, agent, search_policy, use_search))
+                steps[use_search].append(rollout(seed, eval_tf_env, agent, search_policy, search[use_search]))
         if call_print_function:
-            print_results('SEARCH', steps[1], n_experiments)
-            print_results('NO SEARCH', steps[0], n_experiments)
+            print_results('SEARCH', steps['search'], n_experiments)
+            print_results('NO SEARCH', steps['no search'], n_experiments)
         results[distance] = steps
     return results
 
 # Experiments of maximum distance
 def maxdist_exp(eval_tf_env, agent, min_distance, max_distance, n_experiments, max_duration, call_print_function=True):
-    max_dist_params = [5,6,7,8,9,10,12,14]
-    kmeans = [1, 0]
+    max_dist_params = [4,6,8,10,12,14]
+    kmeans = {'k-means': 1, 'default': 0}
     results = dict()
     print(f'\tExperiments with MaxDists: {max_dist_params}')
 
     for max_dist_param in max_dist_params:
         print(f'\nMaxDist set to {max_dist_param}')
-        steps = [[], []]
+        steps = {'k-means': [], 'default': []}
         for use_kmeans in kmeans:
             # Initialize search policy
-            rb_vec = fill_replay_buffer(eval_tf_env, replay_buffer_size=1000, use_kmeans=use_kmeans, upsampling_factor=100)
+            rb_vec = fill_replay_buffer(eval_tf_env, replay_buffer_size=1000, use_kmeans=kmeans[use_kmeans], upsampling_factor=10)
             agent.initialize_search(rb_vec, max_search_steps=max_dist_param)
             search_policy = SearchPolicy(agent, rb_vec, open_loop=True)
             for i in tqdm(range(n_experiments)):
@@ -111,24 +111,23 @@ def maxdist_exp(eval_tf_env, agent, min_distance, max_distance, n_experiments, m
                     max_dist=max_distance)
                 steps[use_kmeans].append(rollout(seed, eval_tf_env, agent, search_policy))
         if call_print_function:
-            print_results('KMEANS', steps[1], n_experiments)
-            print_results('DEFAULT', steps[0], n_experiments)
+            print_results('KMEANS', steps['k-means'], n_experiments)
+            print_results('DEFAULT', steps['default'], n_experiments)
         results[max_dist_param] = steps
     return results
 
 # Experiments of different distance with k-means clustering
 def kmeans_distance_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration, call_print_function=True):
     replay_buffer_size = 1000
-
     # distances = [10, 20, 40, 60] # For resize factor 5
     distances = [30, 60, 90, 120]
-    kmeans = [1, 0]
+    kmeans = {'k-means': 1, 'default': 0}
     results = dict()
     for distance in distances:
         print(f'\nDistance set to {distance}')
-        steps = [[], []]
+        steps = {'k-means': [], 'default': []}
         for use_kmeans in kmeans:
-            rb_vec = fill_replay_buffer(eval_tf_env, replay_buffer_size=replay_buffer_size, use_kmeans=use_kmeans)
+            rb_vec = fill_replay_buffer(eval_tf_env, replay_buffer_size=replay_buffer_size, use_kmeans=kmeans[use_kmeans])
             agent.initialize_search(rb_vec, max_search_steps=max_search_steps)
             search_policy = SearchPolicy(agent, rb_vec, open_loop=True)
             for i in tqdm(range(n_experiments)):
@@ -140,21 +139,21 @@ def kmeans_distance_exp(eval_tf_env, agent, max_search_steps, n_experiments, max
                     max_dist=distance)
                 steps[use_kmeans].append(rollout(seed, eval_tf_env, agent, search_policy))
         if call_print_function:
-            print_results('KMEANS', steps[1], n_experiments)
-            print_results('DEFAULT', steps[0], n_experiments)
+            print_results('KMEANS', steps['k-means'], n_experiments)
+            print_results('DEFAULT', steps['default'], n_experiments)
         results[distance] = steps
     return results
 
 # Experiments of different reply buffer size with k-means clustering
 def kmeans_buffersize_exp(eval_tf_env, agent, min_distance, max_distance, max_search_steps, n_experiments, max_duration, call_print_function=True):
     replay_buffer_sizes = [250, 500, 750, 1000, 1250]
-    kmeans = [1, 0]
+    kmeans = {'k-means': 1, 'default': 0}
     results = dict()
     for replay_buffer_size in replay_buffer_sizes:
         print(f'\nReplay buffer size: {replay_buffer_size}')
-        steps = [[], []]
+        steps = {'k-means': [], 'default': []}
         for use_kmeans in kmeans:
-            rb_vec = fill_replay_buffer(eval_tf_env, replay_buffer_size=replay_buffer_size, use_kmeans=use_kmeans)
+            rb_vec = fill_replay_buffer(eval_tf_env, replay_buffer_size=replay_buffer_size, use_kmeans=kmeans[use_kmeans])
             agent.initialize_search(rb_vec, max_search_steps=max_search_steps)
             search_policy = SearchPolicy(agent, rb_vec, open_loop=True)
             for i in tqdm(range(n_experiments)):
@@ -166,8 +165,8 @@ def kmeans_buffersize_exp(eval_tf_env, agent, min_distance, max_distance, max_se
                     max_dist=max_distance)
                 steps[use_kmeans].append(rollout(seed, eval_tf_env, agent, search_policy))
         if call_print_function:
-            print_results('KMEANS', steps[1], n_experiments)
-            print_results('DEFAULT', steps[0], n_experiments)
+            print_results('KMEANS', steps['k-means'], n_experiments)
+            print_results('DEFAULT', steps['default'], n_experiments)
         results[replay_buffer_size] = steps
     return results
 
@@ -178,7 +177,7 @@ def kmeans_upsampling_exp(eval_tf_env, agent, min_distance, max_distance, max_se
     results = dict()
     for replay_buffer_size in replay_buffer_sizes:
         print(f'\nReplay buffer size: {replay_buffer_size}')
-        steps = [[], [], [], [], []]
+        steps = {i: [] for i in upsampling_factors}
         for index, upsampling_factor in enumerate(upsampling_factors):
             rb_vec = fill_replay_buffer(eval_tf_env, replay_buffer_size=replay_buffer_size, use_kmeans=True, upsampling_factor=upsampling_factor)
             agent.initialize_search(rb_vec, max_search_steps=max_search_steps)
@@ -192,12 +191,12 @@ def kmeans_upsampling_exp(eval_tf_env, agent, min_distance, max_distance, max_se
                     max_dist=max_distance)
                 steps[index].append(rollout(seed, eval_tf_env, agent, search_policy))
         if call_print_function:
-            print_results('UPSAMPLING: 1', steps[0], n_experiments)
-            print_results('UPSAMPLING: 5', steps[1], n_experiments)
-            print_results('UPSAMPLING: 10', steps[2], n_experiments)
-            print_results('UPSAMPLING: 50', steps[3], n_experiments)
-            print_results('UPSAMPLING: 100', steps[4], n_experiments)
-        # Dictionary: keys = replay buffer size, values = lists with nr of steps for different upscaling factors
+            print_results('UPSAMPLING: 1', steps[1], n_experiments)
+            print_results('UPSAMPLING: 5', steps[5], n_experiments)
+            print_results('UPSAMPLING: 10', steps[10], n_experiments)
+            print_results('UPSAMPLING: 50', steps[50], n_experiments)
+            print_results('UPSAMPLING: 100', steps[100], n_experiments)
+        # Dictionary: keys = replay buffer size, values = dictionary with keys=upsampling_factor and values=list with nr of steps
         results[replay_buffer_size] = steps
     return results
 
@@ -207,7 +206,7 @@ def kmeans_same_buffer_exp(eval_tf_env, agent, max_search_steps, n_experiments, 
     results = dict()
     for fraction in fractions:
         print(f'\nFraction rate: {fraction}')
-        steps = []
+        steps = {'k-means': []}
 
         rb_vec = fill_replay_buffer(eval_tf_env, use_same=True, fraction=fraction)
         agent.initialize_search(rb_vec, max_search_steps=max_search_steps)
@@ -219,9 +218,10 @@ def kmeans_same_buffer_exp(eval_tf_env, agent, max_search_steps, n_experiments, 
                 prob_constraint=1.0,
                 min_dist=10,
                 max_dist=120)
-            steps.append(rollout(seed, eval_tf_env, agent, search_policy))
+            steps['k-means'].append(rollout(seed, eval_tf_env, agent, search_policy))
         if call_print_function:
-            print_results('KMEANS', steps, n_experiments)
+            print_results('KMEANS', steps['k-means'], n_experiments)
+        # Dictionary with keys = fractions, values = dict with key=k-means and values=list with nr of steps
         results[fraction] = steps
     return results
 
@@ -231,7 +231,7 @@ def addition_same_buffer_exp(eval_tf_env, agent, max_search_steps, n_experiments
     results = dict()
     for fraction in fractions:
         print(f'\nFraction rate: {fraction}, max_search_steps: {max_search_steps}')
-        steps = []
+        steps = {'k-means': []}
 
         rb_vec = fill_replay_buffer(eval_tf_env, use_same=True, fraction=fraction)
         agent.initialize_search(rb_vec, max_search_steps=max_search_steps)
@@ -243,8 +243,9 @@ def addition_same_buffer_exp(eval_tf_env, agent, max_search_steps, n_experiments
                 prob_constraint=1.0,
                 min_dist=10,
                 max_dist=120)
-            steps.append(rollout(seed, eval_tf_env, agent, search_policy))
+            steps['k-means'].append(rollout(seed, eval_tf_env, agent, search_policy))
         if call_print_function:
-            print_results('KMEANS', steps, n_experiments)
+            print_results('KMEANS', steps['k-means'], n_experiments)
+        # Dictionary with keys = fractions, values = dict with key=k-means and values=list with nr of steps
         results[fraction] = steps
     return results
