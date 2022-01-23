@@ -15,7 +15,6 @@ from time import time
 
 
 def fill_replay_buffer(eval_tf_env, replay_buffer_size=1000, use_same=False, fraction=1.0, use_kmeans=False, upsampling_factor=10, visualize=False):
-	print(use_kmeans)
 	eval_tf_env.pyenv.envs[0].gym.set_sample_goal_args(prob_constraint=0.0, min_dist=0, max_dist=np.inf)
 	rb_vec = []
 	# Randomly sample points and cluster those into number of points needed in buffer

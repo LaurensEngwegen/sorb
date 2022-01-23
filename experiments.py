@@ -92,7 +92,7 @@ def maxdist_exp(eval_tf_env, agent, min_distance, max_distance, n_experiments, m
     max_dist_params = [4,6,8,10,12,14]
     kmeans = {'k-means': 1, 'default': 0}
     results = dict()
-    print(f'\tExperiments with MaxDists: {max_dist_params}')
+    print(f'\nExperiments with MaxDists: {max_dist_params}')
 
     for max_dist_param in max_dist_params:
         print(f'\nMaxDist set to {max_dist_param}')
