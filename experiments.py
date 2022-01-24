@@ -189,7 +189,7 @@ def kmeans_upsampling_exp(eval_tf_env, agent, min_distance, max_distance, max_se
                     prob_constraint=1.0,
                     min_dist=min_distance,
                     max_dist=max_distance)
-                steps[index].append(rollout(seed, eval_tf_env, agent, search_policy))
+                steps[upsampling_factor].append(rollout(seed, eval_tf_env, agent, search_policy))
         if call_print_function:
             print_results('UPSAMPLING: 1', steps[1], n_experiments)
             print_results('UPSAMPLING: 5', steps[5], n_experiments)
