@@ -24,7 +24,7 @@ parser.add_argument('--experiments', default=['kmeansdistance',
 											'additionsamebuffer'
 											], nargs='+', help="Experiment list")
 parser.add_argument('--environments', default=['FourRooms'], nargs='+', help="Environment list")
-parser.add_argument('--max_search_steps', default=10, type=int, help="MaxDist parameter")
+parser.add_argument('--max_search_steps', default=8, type=int, help="MaxDist parameter")
 parser.add_argument('--train_iterations', default=1000000, type=int, help="Training iterations")
 parser.add_argument('--max_episode_steps', default=20, type=int, help="Maximum episode steps")
 parser.add_argument('--resize_factor', default=10, type=int, help="Inflate the environment to increase the difficulty")
