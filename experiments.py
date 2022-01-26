@@ -30,10 +30,13 @@ def rollout(seed, eval_tf_env, agent, search_policy, use_search=1):
             action = agent.policy.action(ts)
         ts = eval_tf_env.step(action)
         step_counter += 1
+    # Return step_counter if goal is reached within duration
     if step_counter < eval_tf_env.pyenv.envs[0]._duration:
         steps = step_counter
+    # Return None if no path was found from start to goal
     elif step_counter == eval_tf_env.pyenv.envs[0]._duration + 1:
         steps = None
+    # Return 0 otherwise (i.e. if goal was not reached within time limit)
     else:
         steps = 0
     return steps
