@@ -94,7 +94,7 @@ for run in range(1,4):
             elif exp == 'kmeanssamebuffer':
                 results = kmeans_same_buffer_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration)
             elif exp == 'additionsamebuffer':
-                maxsearchsteps = [50, 70, 100]
+                maxsearchsteps = [4, 6, 10, 12, 15, 20]
                 for max_search_steps in maxsearchsteps:
                     results = addition_same_buffer_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration)
             

@@ -230,7 +230,7 @@ def kmeans_same_buffer_exp(eval_tf_env, agent, max_search_steps, n_experiments, 
 
 # Expeiremnts of additional same reply buffer size experiments, which explore the effect of different max search steps
 def addition_same_buffer_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration, call_print_function=True):
-    fractions = [0.1, 0.25]
+    fractions = [0.1, 0.25, 0.5, 0.75, 1.0]
     results = dict()
     for fraction in fractions:
         print(f'\nFraction rate: {fraction}, max_search_steps: {max_search_steps}')
