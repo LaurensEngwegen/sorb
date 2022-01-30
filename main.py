@@ -12,9 +12,7 @@ from graphsearch import *
 import argparse
 import os
 
-parser=argparse.ArgumentParser()
-parser.add_argument('--n_experiments', default=100, type=int, help="Number of experiemnts")
-parser.add_argument('--max_duration', default=300, type=int, help="Number of examples per class in the support set")
+parser = argparse.ArgumentParser()
 parser.add_argument('--experiments', default=['kmeansdistance',
 											'kmeansbuffersize',
 											'distance',
@@ -25,34 +23,42 @@ parser.add_argument('--experiments', default=['kmeansdistance',
 											], nargs='+', help="Experiment list")
 parser.add_argument('--environments', default=['FourRooms'], nargs='+', help="Environment list")
 parser.add_argument('--max_search_steps', default=8, type=int, help="MaxDist parameter")
-parser.add_argument('--train_iterations', default=1000000, type=int, help="Training iterations")
-parser.add_argument('--max_episode_steps', default=20, type=int, help="Maximum episode steps")
 parser.add_argument('--resize_factor', default=10, type=int, help="Inflate the environment to increase the difficulty")
-parser.add_argument('--min_distance', default=10, type=int, help="Minimum distance between sampled (start, goal) states")
-parser.add_argument('--max_distance', default=120, type=int, help="Maximum distance between sampled (start, goal) states")
+parser.add_argument('--visualize', default=False, type=bool, help="Visualization of algorithm steps")
 
 args = parser.parse_args()
-n_experiments = args.n_experiments
-max_duration = args.max_duration
+
 experiments = args.experiments
 environments = args.environments
 max_search_steps = args.max_search_steps
-train_iterations = args.train_iterations
-max_episode_steps = args.max_episode_steps
 resize_factor = args.resize_factor
-min_distance = args.min_distance
-max_distance = args.max_distance
+visualize = args.visualize
+
+# Fixed parameters
+n_experiments = 100 # Test repetitions
+max_duration = 300 # Max. episode length during testing
+train_iterations = 1000000 # Nr. of training iterations
+max_episode_steps = 20 # Max. episode length during training (goal-cond.)
+min_distance = 10 # Min. distance to goal
+max_distance = 120 # Max. distance to goal
+
+experiment_repetitions = 3
 
 results_folder = 'results'
 if not os.path.exists(results_folder):
     os.makedirs(results_folder)
 
-# Run all the experiments 3 times
-for run in range(1,4):
+# Run all the experiments
+for run in range(1, experiment_repetitions+1):
     for env_name in environments:
         # Create environments
         tf_env = env_load_fn(env_name, max_episode_steps, resize_factor=resize_factor, terminate_on_timeout=False)
         eval_tf_env = env_load_fn(env_name, max_episode_steps, resize_factor=resize_factor, terminate_on_timeout=True)
+        # Visualize a start, goal and replay buffer (with and without using clustering)
+        if visualize:
+            visualize_start_goal(seed=42, eval_tf_env=eval_tf_env)
+            visualize_replaybuffer(seed=42, eval_tf_env=eval_tf_env, kmeans=False)
+            visualize_replaybuffer(seed=42, eval_tf_env=eval_tf_env, kmeans=True)
         # Create agent
         agent = UvfAgent(
                 tf_env.time_step_spec(),
@@ -70,36 +76,22 @@ for run in range(1,4):
                 num_eval_episodes=10,
                 num_iterations=train_iterations,
         )
-
-        print(f'\nStarting experiments in environment: {env_name}\n')
+        # Visualize the waypoints used between a start and goal
+        if visualize:
+            visualize_search_path(seed=42, eval_tf_env=eval_tf_env, kmeans=False)
+            visualize_search_path(seed=42, eval_tf_env=eval_tf_env, kmeans=True)
+        # Experiment
+        if experiments[0] != 'False':
+            experimenter = Experimenter(experiments,
+                                        env_name, 
+                                        eval_tf_env, 
+                                        agent, 
+                                        max_duration, 
+                                        max_search_steps, 
+                                        min_distance, 
+                                        max_distance,
+                                        run, 
+                                        n_experiments, 
+                                        results_folder,
+                                        call_print_func=True)
         
-        for exp in experiments:
-
-            # Pickles will contain a dictionary consisting of:
-            # Keys corresponding to the conditions (i.e. distances, replay buffer sizes, etc.)
-            # that will contain list(s) with number of steps it took to complete the task
-                # 0 -> Task was not completed within max_duration
-                # None -> No path was found between start and goal
-
-            if exp == 'kmeansdistance':
-                results = kmeans_distance_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration)
-            elif exp == 'kmeansbuffersize':
-                results = kmeans_buffersize_exp(eval_tf_env, agent, min_distance, max_distance, max_search_steps, n_experiments, max_duration)
-            elif exp == 'distance':
-                results = distance_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration)
-            elif exp == 'maxdist':
-                results = maxdist_exp(eval_tf_env, agent, min_distance, max_distance, n_experiments, max_duration)
-            elif exp == 'upsampling':
-                results = kmeans_upsampling_exp(eval_tf_env, agent, min_distance, max_distance, max_search_steps, n_experiments, max_duration)
-            elif exp == 'kmeanssamebuffer':
-                results = kmeans_same_buffer_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration)
-            elif exp == 'additionsamebuffer':
-                maxsearchsteps = [4, 6, 10, 12, 15, 20]
-                for max_search_steps in maxsearchsteps:
-                    results = addition_same_buffer_exp(eval_tf_env, agent, max_search_steps, n_experiments, max_duration)
-            
-            # Save results dict in pickle
-            save_path = os.path.join(results_folder, 
-                                    f'results_{exp}_{env_name}_run{run}.pkl')
-            with open(save_path, 'wb') as f:
-                pkl.dump(results, f)
