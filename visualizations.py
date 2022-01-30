@@ -101,8 +101,8 @@ def visualize_search_vs_nosearch(eval_tf_env, agent, search_policy, rb_vec, dist
 def visualize_start_goal(seed, eval_tf_env):
 	eval_tf_env.pyenv.envs[0].gym.set_sample_goal_args(
 		prob_constraint=1.0,
-		min_dist=60,
-		max_dist=60)
+		min_dist=90,
+		max_dist=90)
 
 	np.random.seed(seed)
 	
@@ -110,7 +110,7 @@ def visualize_start_goal(seed, eval_tf_env):
 	goal = ts.observation['goal'].numpy()[0]
 	start = ts.observation['observation'].numpy()[0]
 
-	plt.figure(figsize=(12,9))
+	plt.figure(figsize=(10,10))
 	plot_walls(eval_tf_env.pyenv.envs[0].env.walls)
 	plt.scatter([start[0]], [start[1]], marker='+', color='red', s=200, label='start')
 	plt.scatter([goal[0]], [goal[1]], marker='*', color='green', s=200, label='goal')
@@ -119,8 +119,8 @@ def visualize_start_goal(seed, eval_tf_env):
 def visualize_replaybuffer(seed, eval_tf_env, kmeans):
 	eval_tf_env.pyenv.envs[0].gym.set_sample_goal_args(
 		prob_constraint=1.0,
-		min_dist=60,
-		max_dist=60)
+		min_dist=90,
+		max_dist=90)
 
 	np.random.seed(seed)
 	ts = eval_tf_env.reset()
@@ -128,7 +128,7 @@ def visualize_replaybuffer(seed, eval_tf_env, kmeans):
 	start = ts.observation['observation'].numpy()[0]
 	rb_vec = fill_replay_buffer(eval_tf_env, use_kmeans=kmeans)
 
-	plt.figure(figsize=(12,9))
+	plt.figure(figsize=(10,10))
 	plot_walls(eval_tf_env.pyenv.envs[0].env.walls)
 	plt.scatter([start[0]], [start[1]], marker='+', color='red', s=200, label='start')
 	plt.scatter([goal[0]], [goal[1]], marker='*', color='green', s=200, label='goal')
@@ -143,8 +143,8 @@ def visualize_search_path(seed, eval_tf_env, agent, kmeans):
 
 	eval_tf_env.pyenv.envs[0].gym.set_sample_goal_args(
 		prob_constraint=1.0,
-		min_dist=60,
-		max_dist=60)
+		min_dist=90,
+		max_dist=90)
 
 	np.random.seed(seed)
 	ts = eval_tf_env.reset()
@@ -173,7 +173,7 @@ def visualize_search_path(seed, eval_tf_env, agent, kmeans):
 	waypoint_vec.append(goal)
 	waypoint_vec = np.array(waypoint_vec)
 
-	plt.figure(figsize=(12,9))
+	plt.figure(figsize=(10,10))
 	plot_walls(eval_tf_env.pyenv.envs[0].env.walls)
 	plt.scatter([start[0]], [start[1]], marker='+', color='red', s=200, label='start')
 	plt.scatter([goal[0]], [goal[1]], marker='*', color='green', s=200, label='goal')
