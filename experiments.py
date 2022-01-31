@@ -134,7 +134,7 @@ class Experimenter():
                     max_dist=distance)
                 for use_search in search:
                     steps[use_search].append(self.rollout(seed, search_policy, search[use_search]))
-            if self.call_print_function:
+            if self.call_print_func:
                 self.print_results('SEARCH', steps['search'])
                 self.print_results('NO SEARCH', steps['no search'])
             results[distance] = steps
@@ -163,7 +163,7 @@ class Experimenter():
                         min_dist=self.min_distance,
                         max_dist=self.max_distance)
                     steps[use_kmeans].append(self.rollout(seed, search_policy))
-            if self.call_print_function:
+            if self.call_print_func:
                 self.print_results('KMEANS', steps['k-means'])
                 self.print_results('DEFAULT', steps['default'])
             results[max_dist_param] = steps
@@ -191,7 +191,7 @@ class Experimenter():
                         min_dist=distance,
                         max_dist=distance)
                     steps[use_kmeans].append(self.rollout(seed, search_policy))
-            if self.call_print_function:
+            if self.call_print_func:
                 self.print_results('KMEANS', steps['k-means'])
                 self.print_results('DEFAULT', steps['default'])
             results[distance] = steps
@@ -217,7 +217,7 @@ class Experimenter():
                         min_dist=self.min_distance,
                         max_dist=self.max_distance)
                     steps[use_kmeans].append(self.rollout(seed, search_policy))
-            if self.call_print_function:
+            if self.call_print_func:
                 self.print_results('KMEANS', steps['k-means'])
                 self.print_results('DEFAULT', steps['default'])
             results[replay_buffer_size] = steps
@@ -243,7 +243,7 @@ class Experimenter():
                         min_dist=self.min_distance,
                         max_dist=self.max_distance)
                     steps[upsampling_factor].append(self.rollout(seed, search_policy))
-            if self.call_print_function:
+            if self.call_print_func:
                 for j in upsampling_factors:
                     self.print_results(f'UPSAMPLING: {j}', steps[j])
             # Dictionary: keys = replay buffer size, values = dictionary with keys=upsampling_factor and values=list with nr of steps
@@ -269,7 +269,7 @@ class Experimenter():
                     min_dist=10,
                     max_dist=120)
                 steps['k-means'].append(self.rollout(seed, search_policy))
-            if self.call_print_function:
+            if self.call_print_func:
                 self.print_results('KMEANS', steps['k-means'])
             # Dictionary with keys = fractions, values = dict with key=k-means and values=list with nr of steps
             results[fraction] = steps
@@ -294,7 +294,7 @@ class Experimenter():
                     min_dist=10,
                     max_dist=120)
                 steps['k-means'].append(self.rollout(seed, search_policy))
-            if self.call_print_function:
+            if self.call_print_func:
                 self.print_results('KMEANS', steps['k-means'])
             # Dictionary with keys = fractions, values = dict with key=k-means and values=list with nr of steps
             results[fraction] = steps
