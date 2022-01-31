@@ -78,8 +78,8 @@ for run in range(1, experiment_repetitions+1):
         )
         # Visualize the waypoints used between a start and goal
         if visualize:
-            visualize_search_path(seed=42, eval_tf_env=eval_tf_env, kmeans=False)
-            visualize_search_path(seed=42, eval_tf_env=eval_tf_env, kmeans=True)
+            visualize_search_path(seed=42, eval_tf_env=eval_tf_env, agent=agent, kmeans=False)
+            visualize_search_path(seed=42, eval_tf_env=eval_tf_env, agent=agent, kmeans=True)
         # Experiment
         if experiments[0] != 'False':
             experimenter = Experimenter(experiments,
