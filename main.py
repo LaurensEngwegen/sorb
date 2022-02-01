@@ -42,8 +42,13 @@ max_episode_steps = 20 # Max. episode length during training (goal-cond.)
 min_distance = 10 # Min. distance to goal
 max_distance = 120 # Max. distance to goal
 
-experiment_repetitions = 3
+# Nr. of experiment repetitions (if any)
+if experiments[0] != 'False':
+    experiment_repetitions = 3
+else:
+    experiment_repetitions = 1
 
+# Define (and create) folder to store results
 results_folder = 'results'
 if not os.path.exists(results_folder):
     os.makedirs(results_folder)
