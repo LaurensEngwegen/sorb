@@ -84,7 +84,8 @@ def show_results(experiments, env, resize_factor, training_iters):
         'kmeansbuffersize': 'Replay buffer size',
         'maxdist': 'MaxDist parameter',
         'upsampling': 'Replay buffer size',
-        'kmeanssamebuffer': 'Replay buffer fraction'
+        'kmeanssamebuffer': 'Replay buffer fraction',
+        'additionsamebuffer': 'Replay buffer fraction'
         }
     for exp in experiments:
         all_succ_rates = [[], [], []]
@@ -115,8 +116,8 @@ def show_results(experiments, env, resize_factor, training_iters):
 envs = ['FourRooms']
 resize_factor = 10
 training_iters = 1000000
-# Possible experiments: 'distance', 'kmeansdistance', 'kmeansbuffersize', 'maxdist', 'upsampling', 'kmeanssamebuffer'
-experiments = ['kmeanssamebuffer']
+# Possible experiments: 'distance', 'kmeansdistance', 'kmeansbuffersize', 'maxdist', 'upsampling', 'kmeanssamebuffer', 'additionsamebuffer'
+experiments = ['additionsamebuffer']
 
 for env in envs:
     show_results(experiments, env, resize_factor, training_iters)
