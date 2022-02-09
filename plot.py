@@ -93,6 +93,8 @@ def show_results(experiments, env, resize_factor, training_iters):
         for i in range(1, 4):
             with open(f'results/results_{exp}_{env}_run{i}.pkl', 'rb') as f:
                 results = pkl.load(f)
+            #Merge the same buffer results
+            #merge_same_buffer(results, env, i)
             # Calculate succes rates
             success_rates = get_success_rates(results)
             n_nones = get_nones(results)
@@ -112,8 +114,16 @@ def show_results(experiments, env, resize_factor, training_iters):
 
         # print_avg_steps(results, plot_args[exp]['conditions'])
 
+def merge_same_buffer(addition_results, env, i):
+    with open(f'results/results_kmeanssamebuffer_{env}_run{i}.pkl', 'rb') as f:
+        same_buffer_results = pkl.load(f)
+    for frac in addition_results:
+        addition_results[frac][8] = same_buffer_results[frac]['k-means']
+        addition_results[frac] = dict(sorted(addition_results[frac].items(), key=lambda x:x[0]))
 
-envs = ['FourRooms']
+    return addition_results
+
+envs = ['Spiral11x11']
 resize_factor = 10
 training_iters = 1000000
 # Possible experiments: 'distance', 'kmeansdistance', 'kmeansbuffersize', 'maxdist', 'upsampling', 'kmeanssamebuffer', 'additionsamebuffer'
