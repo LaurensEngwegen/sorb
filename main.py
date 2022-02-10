@@ -42,9 +42,10 @@ max_episode_steps = 20 # Max. episode length during training (goal-cond.)
 min_distance = 10 # Min. distance to goal
 max_distance = 120 # Max. distance to goal
 
-# Nr. of experiment repetitions (if any)
+# Nr. of experiment repetitions
 if experiments[0] != 'False':
     experiment_repetitions = 3
+# Set to 1 if no experiments (to only do visualizations once)
 else:
     experiment_repetitions = 1
 
@@ -60,10 +61,12 @@ for run in range(1, experiment_repetitions+1):
         tf_env = env_load_fn(env_name, max_episode_steps, resize_factor=resize_factor, terminate_on_timeout=False)
         eval_tf_env = env_load_fn(env_name, max_episode_steps, resize_factor=resize_factor, terminate_on_timeout=True)
         # Visualize a start, goal and replay buffer (with and without using clustering)
+        test_seed = 12
+        test_distance = 90
         if visualize:
-            visualize_start_goal(seed=42, eval_tf_env=eval_tf_env)
-            visualize_replaybuffer(seed=42, eval_tf_env=eval_tf_env, kmeans=False)
-            visualize_replaybuffer(seed=42, eval_tf_env=eval_tf_env, kmeans=True)
+            visualize_start_goal(seed=test_seed, eval_tf_env=eval_tf_env, distance=test_distance)
+            visualize_replaybuffer(seed=test_seed, eval_tf_env=eval_tf_env, kmeans=False, distance=test_distance)
+            visualize_replaybuffer(seed=test_seed, eval_tf_env=eval_tf_env, kmeans=True, distance=test_distance)
         # Create agent
         agent = UvfAgent(
                 tf_env.time_step_spec(),
@@ -83,8 +86,8 @@ for run in range(1, experiment_repetitions+1):
         )
         # Visualize the waypoints used between a start and goal
         if visualize:
-            visualize_search_path(seed=42, eval_tf_env=eval_tf_env, agent=agent, kmeans=False)
-            visualize_search_path(seed=42, eval_tf_env=eval_tf_env, agent=agent, kmeans=True)
+            visualize_search_path(seed=test_seed, eval_tf_env=eval_tf_env, agent=agent, kmeans=False, with_steps=False, distance=test_distance)
+            visualize_search_path(seed=test_seed, eval_tf_env=eval_tf_env, agent=agent, kmeans=True, with_steps=False, distance=test_distance)
         # Experiment
         if experiments[0] != 'False':
             experimenter = Experimenter(experiments,
