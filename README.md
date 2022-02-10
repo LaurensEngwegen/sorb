@@ -7,7 +7,7 @@ Repository for our implementation of, experimentation with and contributions to 
 We build upon SoRB by introducing a clustering approach to construct a replay buffer that contains states that are evenly distributed over the state space.
 
 <p align="center">
-  <img width="400" height="400" src="https://github.com/LaurensEngwegen/sorb/blob/main/figures/graphical_explanation.PNG">
+  <img width="700" height="400" src="https://github.com/LaurensEngwegen/sorb/blob/main/figures/graphical_explanation.PNG">
 </p>
 
 ### Experimentation
