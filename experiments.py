@@ -40,14 +40,9 @@ class Experimenter():
             elif exp == 'upsampling':
                 results = self.kmeans_upsampling_exp()
             elif exp == 'kmeanssamebuffer':
-                results = self.kmeans_same_buffer_exp()
-            
+                results = self.kmeans_same_buffer_exp()        
             elif exp == 'additionsamebuffer':
-
-                # TODO: put the different maxsearchsteps experiments into addition_same_buffer_exp function
-                maxsearchsteps = [4, 6, 10, 12, 15, 20]
-                for max_search_steps in maxsearchsteps:
-                    results = self.addition_same_buffer_exp()
+                results = self.addition_same_buffer_exp()
             
             # Save results dict in pickle
             save_path = os.path.join(results_folder, 
@@ -278,24 +273,25 @@ class Experimenter():
     # Expeiremnts of additional same reply buffer size experiments, which explore the effect of different max search steps
     def addition_same_buffer_exp(self):
         fractions = [0.1, 0.25, 0.5, 0.75, 1.0]
+        maxsearchsteps = [4, 6, 10, 12, 15, 20]
         results = dict()
         for fraction in fractions:
-            print(f'\nFraction rate: {fraction}, max_search_steps: {self.max_search_steps}')
-            steps = {'k-means': []}
-
-            rb_vec = fill_replay_buffer(self.eval_tf_env, use_same=True, fraction=fraction)
-            self.agent.initialize_search(rb_vec, max_search_steps=self.max_search_steps)
-            search_policy = SearchPolicy(self.agent, rb_vec, open_loop=True)
-            for i in tqdm(range(self.n_experiments)):
-                seed = i # To ensure same start and goal states for different conditions
-                self.eval_tf_env.pyenv.envs[0]._duration = self.max_duration
-                self.eval_tf_env.pyenv.envs[0].gym.set_sample_goal_args(
-                    prob_constraint=1.0,
-                    min_dist=10,
-                    max_dist=120)
-                steps['k-means'].append(self.rollout(seed, search_policy))
+            print(f'\nFraction rate: {fraction}')
+            steps = {i: [] for i in maxsearchsteps}
+            for max_search_steps in maxsearchsteps:
+                rb_vec = fill_replay_buffer(self.eval_tf_env, use_same=True, fraction=fraction)
+                self.agent.initialize_search(rb_vec, max_search_steps=max_search_steps)
+                search_policy = SearchPolicy(self.agent, rb_vec, open_loop=True)
+                for i in tqdm(range(self.n_experiments)):
+                    seed = i # To ensure same start and goal states for different conditions
+                    self.eval_tf_env.pyenv.envs[0]._duration = self.max_duration
+                    self.eval_tf_env.pyenv.envs[0].gym.set_sample_goal_args(
+                        prob_constraint=1.0,
+                        min_dist=self.min_distance,
+                        max_dist=self.max_distance)
+                    steps[max_search_steps].append(self.rollout(seed, search_policy))
             if self.call_print_func:
-                self.print_results('KMEANS', steps['k-means'])
-            # Dictionary with keys = fractions, values = dict with key=k-means and values=list with nr of steps
+                for j in maxsearchsteps:
+                    self.print_results(f'MAX_SEARCH_STEPS: {j}', steps[j])
             results[fraction] = steps
         return results
