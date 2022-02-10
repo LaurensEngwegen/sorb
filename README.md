@@ -6,10 +6,6 @@ Repository for our implementation of, experimentation with and contributions to 
 
 We build upon SoRB by introducing a clustering approach to construct a replay buffer that contains states that are evenly distributed over the state space.
 
-<p align="center">
-  <img width="400" height="400" src="https://github.com/LaurensEngwegen/sorb/blob/main/figures/graphical_explanation.png">
-</p>
-
 ### Experimentation
 Our experiments can be reproduced by running `main.py` after which various options can be specified:
 * `--experiments`: Type of experiments to reproduce, with a choice between,
