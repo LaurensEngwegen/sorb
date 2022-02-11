@@ -27,4 +27,7 @@ Our experiments can be reproduced by running `main.py` after which various optio
 
 All other parameters, e.g. concerning the goal-conditioned agent, must be changed in the raw code. Those parameters were, however, fixed to their current values during experimentation.
 
+### Results
+The results of our experiments are stored in `pickle files`. The corresponding graphs and other results can be visualized by running `plot.py`. In this file, the experiment(s) (with the same name as above) and environment(s) for which to show the results must be specified.
+
 The original paper can be found [here](https://arxiv.org/pdf/1906.05253.pdf), which includes a [link](http://bit.ly/rl_search) to the code published by the authors.
